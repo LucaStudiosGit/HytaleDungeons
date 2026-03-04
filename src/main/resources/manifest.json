@@ -1,0 +1,21 @@
+{
+    "Group": "LucaStudios",
+    "Name": "HytaleDungeons",
+    "Version": "0.0.2",
+    "Authors": [
+        {
+            "Name": "Omer Behar",
+            "name": "Itamar Behar"
+        }
+    ],
+    "Website": "lucastudios.com",
+    "Dependencies": {
+        
+    },
+    "OptionalDependencies": {
+        
+    },
+    "DisabledByDefault": false,
+    "Main": "com.LucaStudios.HytaleDungeons.ExamplePlugin",
+    "IncludesAssetPack": true
+}
