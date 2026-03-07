@@ -1,5 +1,7 @@
 package com.LucaStudios.HytaleDungeons;
 
+import com.LucaStudios.HytaleDungeons.InventoryHandler.InventoryOpenDisabler;
+import com.LucaStudios.HytaleDungeons.Pages.InventoryPage;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
@@ -9,11 +11,11 @@ import java.util.logging.Level;
 public class Main extends JavaPlugin {
 
     private static Main instance;
+    private InventoryOpenDisabler inventoryOpenDisabler;
 
     public Main(@Nonnull JavaPluginInit init) {
         super(init);
         instance = this;
-        getLogger().at(Level.INFO).log("[TemplatePlugin] Plugin loaded!");
     }
 
     public static Main getInstance() {
@@ -22,26 +24,20 @@ public class Main extends JavaPlugin {
 
     @Override
     protected void setup() {
-        getLogger().at(Level.INFO).log("[TemplatePlugin] Plugin setup!");
-        
+        getLogger().at(Level.INFO).log("HytaleDungeons Plugin start!");
+
         registerEvents();
         registerCommands();
     }
 
     @Override
-    protected void start() {
-        getLogger().at(Level.INFO).log("[TemplatePlugin] Plugin enabled!");
-
-    }
-
-    @Override
     public void shutdown() {
-        getLogger().at(Level.INFO).log("[TemplatePlugin] Plugin disabled!");
-
+        getLogger().at(Level.INFO).log("HytaleDungeons Plugin disabled!");
     }
 
     private void registerEvents() {
-
+        inventoryOpenDisabler = new InventoryOpenDisabler(this, new InventoryPage());
+        inventoryOpenDisabler.register();
     }
 
     private void registerCommands() {

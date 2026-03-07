@@ -50,6 +50,7 @@ javadoc {
 // present, we still use its jar for launching the server in IDE run configs.
 dependencies {
     compileOnly("com.hypixel.hytale:Server:$hytale_build")
+    implementation("curse.maven:hyui-1431415:7713977")
     if (hasHytaleHome) {
         runtimeOnly(files("$hytaleHome/install/$patchline/package/game/latest/Server/HytaleServer.jar"))
     }
@@ -59,6 +60,10 @@ dependencies {
 
 repositories {
     mavenCentral()
+    maven {
+        name = "cursemaven"
+        url = uri("https://www.cursemaven.com")
+    }
     maven {
         name = "hytale-release"
         url = uri("https://maven.hytale.com/release")
