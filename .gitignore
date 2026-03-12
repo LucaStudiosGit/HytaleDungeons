@@ -1,0 +1,5 @@
+/run
+/build
+/.claude
+/buildSrc
+*.lock
