@@ -3,3 +3,4 @@
 /.claude
 /buildSrc
 *.lock
+/.claude
