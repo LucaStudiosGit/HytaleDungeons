@@ -38,14 +38,22 @@ public final class InventoryOpenDisabler {
 
     private void onPlayerReady(PlayerReadyEvent event) {
         var entityRef = event.getPlayerRef();
-        PlayerRef playerRef = entityRef.getStore().getComponent(entityRef, PlayerRef.getComponentType());
-        if (playerRef == null) {
-            plugin.getLogger().at(Level.WARNING)
-                    .log("Skipping inventory packet hook because PlayerRef component is missing.");
-            return;
-        }
+        var store = entityRef.getStore();
+        var world = store.getExternalData().getWorld();
+        world.execute(() -> {
+            if (!entityRef.isValid()) {
+                return;
+            }
 
-        hookInventoryOpenPacket(playerRef);
+            PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
+            if (playerRef == null) {
+                plugin.getLogger().at(Level.WARNING)
+                        .log("Skipping inventory packet hook because PlayerRef component is missing.");
+                return;
+            }
+
+            hookInventoryOpenPacket(playerRef);
+        });
     }
 
     private void onPlayerDisconnect(PlayerDisconnectEvent event) {

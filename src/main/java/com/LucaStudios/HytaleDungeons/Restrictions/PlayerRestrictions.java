@@ -23,10 +23,18 @@ public final class PlayerRestrictions {
 
     private void onPlayerReady(PlayerReadyEvent event) {
         var entityRef = event.getPlayerRef();
-        PlayerRef playerRef = entityRef.getStore().getComponent(entityRef, PlayerRef.getComponentType());
-        if (playerRef == null) return;
+        var store = entityRef.getStore();
+        var world = store.getExternalData().getWorld();
+        world.execute(() -> {
+            if (!entityRef.isValid()) {
+                return;
+            }
 
-        disableJump(playerRef);
+            PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
+            if (playerRef == null) return;
+
+            disableJump(playerRef);
+        });
     }
 
     private void disableJump(PlayerRef playerRef) {

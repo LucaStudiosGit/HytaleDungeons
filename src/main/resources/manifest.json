@@ -4,11 +4,13 @@
     "Version": "0.0.2",
     "Authors": [
         {
-            "Name": "Omer Behar",
-            "name": "Itamar Behar"
+            "Name": "Omer Behar"
+        },
+        {
+            "Name": "Itamar Behar"
         }
     ],
-    "Website": "lucastudios.com",
+    "Website": "https://lucastudios.com",
     "Dependencies": {
         
     },
