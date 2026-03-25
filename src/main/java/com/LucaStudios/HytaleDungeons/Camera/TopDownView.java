@@ -14,38 +14,35 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 public final class TopDownView {
 
-    public static void enable(PlayerRef playerRef) {
+    private static ServerCameraSettings buildBaseSettings() {
         ServerCameraSettings settings = new ServerCameraSettings();
         settings.positionLerpSpeed = 0.2f;
         settings.rotationLerpSpeed = 0.2f;
         settings.distance = 8.0f;
         settings.displayCursor = true;
         settings.allowPitchControls = false;
-
         settings.isFirstPerson = false;
-
-//        settings.movementForceRotationType = MovementForceRotationType.Custom;
         settings.eyeOffset = true;
         settings.positionDistanceOffsetType = PositionDistanceOffsetType.DistanceOffset;
         settings.rotationType = RotationType.Custom;
-        Direction cameraDirection = new Direction(
+        settings.rotation = new Direction(
                 (float) Math.toRadians(45f),  // yaw
                 (float) Math.toRadians(-35f), // pitch
                 0f                            // roll
         );
-//        Direction fixedPlayerFacing = new Direction(
-//                (float) Math.toRadians(45f),  // face camera-forward direction
-//                0f,
-//                0f
-//        );
+        return settings;
+    }
 
-        settings.rotation = cameraDirection;
-//        settings.movementForceRotation = fixedPlayerFacing;
+    public static void enable(PlayerRef playerRef) {
+        playerRef.getPacketHandler().writeNoCache(
+                new SetServerCamera(ClientCameraView.Custom, true, buildBaseSettings())
+        );
+    }
 
-//        settings.mouseInputType = MouseInputType.LookAtPlane;
-//        settings.planeNormal = new Vector3f(0f, 1f, 0f);
-//        settings.applyLookType = ApplyLookType.LocalPlayerLookOrientation;
-
+    public static void faceDirection(PlayerRef playerRef, float yaw) {
+        ServerCameraSettings settings = buildBaseSettings();
+        settings.movementForceRotationType = MovementForceRotationType.Custom;
+        settings.movementForceRotation = new Direction(yaw, 0f, 0f);
         playerRef.getPacketHandler().writeNoCache(
                 new SetServerCamera(ClientCameraView.Custom, true, settings)
         );

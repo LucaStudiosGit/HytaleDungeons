@@ -6,10 +6,17 @@ import com.LucaStudios.HytaleDungeons.InventoryHandler.InventoryOpenDisabler;
 import com.LucaStudios.HytaleDungeons.Movement.ClickToMoveHandler;
 import com.LucaStudios.HytaleDungeons.Pages.InventoryPage;
 import com.LucaStudios.HytaleDungeons.Restrictions.PlayerRestrictions;
+import com.hypixel.hytale.component.ComponentAccessor;
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
 import java.util.logging.Level;
@@ -20,6 +27,7 @@ public class Main extends JavaPlugin {
 
     private InventoryOpenDisabler inventoryOpenDisabler;
     private ClickToMoveHandler clickToMoveHandler;
+    private RightClickCrossbowHandler rightClickCrossbowHandler;
 
     public Main(@Nonnull JavaPluginInit init) {
         super(init);
@@ -45,6 +53,9 @@ public class Main extends JavaPlugin {
         if (clickToMoveHandler != null) {
             clickToMoveHandler.shutdown();
         }
+        if (rightClickCrossbowHandler != null) {
+            rightClickCrossbowHandler.shutdown();
+        }
     }
 
     private void registerEvents() {
@@ -62,10 +73,10 @@ public class Main extends JavaPlugin {
     }
 
     private void onPlayerReady(PlayerReadyEvent event) {
-        var entityRef = event.getPlayerRef();
-        var store = entityRef.getStore();
-        var world = store.getExternalData().getWorld();
-
+        Ref<EntityStore> entityRef = event.getPlayerRef();
+        Store<EntityStore> store = entityRef.getStore();
+        World world = store.getExternalData().getWorld();
+        ItemStack sword = new ItemStack("Weapon_Sword_Iron", 1);
         world.execute(() -> {
             if (!entityRef.isValid()) {
                 return;
@@ -75,8 +86,13 @@ public class Main extends JavaPlugin {
             if (playerRef == null) {
                 return;
             }
-
             TopDownView.enable(playerRef);
+
+            Player player = event.getPlayer();
+
+            player.getInventory()
+                    .getHotbar()
+                    .setItemStackForSlot((short) 0, sword);
         });
     }
 
