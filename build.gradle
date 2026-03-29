@@ -15,11 +15,9 @@ ext {
         def os = OperatingSystem.current()
         if (os.isWindows()) {
             hytaleHome = "${System.getProperty("user.home")}/AppData/Roaming/Hytale"
-        }
-        else if (os.isMacOsX()) {
+        } else if (os.isMacOsX()) {
             hytaleHome = "${System.getProperty("user.home")}/Library/Application Support/Hytale"
-        }
-        else if (os.isLinux()) {
+        } else if (os.isLinux()) {
             hytaleHome = "${System.getProperty("user.home")}/.var/app/com.hypixel.HytaleLauncher/data/Hytale"
             if (!file(hytaleHome).exists()) {
                 hytaleHome = "${System.getProperty("user.home")}/.local/share/Hytale"
@@ -40,22 +38,8 @@ java {
     withJavadocJar()
 }
 
-// Quiet warnings about missing Javadocs.
 javadoc {
     options.addStringOption('Xdoclint:-missing', '-quiet')
-}
-
-// Adds the Hytale server as a build dependency, allowing you to reference and
-// compile against their code without bundling it. When a local install is
-// present, we still use its jar for launching the server in IDE run configs.
-dependencies {
-    compileOnly("com.hypixel.hytale:Server:$hytale_build")
-    implementation("curse.maven:hyui-1431415:7713977")
-    if (hasHytaleHome) {
-        runtimeOnly(files("$hytaleHome/install/$patchline/package/game/latest/Server/HytaleServer.jar"))
-    }
-
-    // Your dependencies here
 }
 
 repositories {
@@ -74,9 +58,32 @@ repositories {
     }
 }
 
-// Updates the manifest.json file with the latest properties defined in the
-// build.properties file. Currently we update the version and if packs are
-// included with the plugin.
+/*
+ * Very important:
+ * - Compile against the exact local HytaleServer.jar that the game/server is using
+ * - Never let a transitive dependency bring in com.hypixel.hytale:Server
+ */
+configurations.configureEach {
+    exclude group: "com.hypixel.hytale", module: "Server"
+}
+
+dependencies {
+    if (hasHytaleHome) {
+        def serverJar = "$hytaleHome/install/$patchline/package/game/latest/Server/HytaleServer.jar"
+        compileOnly(files(serverJar))
+        runtimeOnly(files(serverJar))
+    } else {
+        throw new GradleException("Hytale home not found, cannot compile against live HytaleServer.jar")
+    }
+
+    // HyUI should be present separately at runtime
+    compileOnly("curse.maven:hyui-1431415:7713977") {
+        exclude group: "com.hypixel.hytale", module: "Server"
+    }
+
+    // Your other dependencies here
+}
+
 tasks.register('updatePluginManifest') {
     def manifestFile = file('src/main/resources/manifest.json')
     doLast {
@@ -90,7 +97,6 @@ tasks.register('updatePluginManifest') {
     }
 }
 
-// Makes sure the plugin manifest is up to date.
 tasks.named('processResources') {
     dependsOn 'updatePluginManifest'
 }
@@ -100,13 +106,11 @@ tasks.named('shadowJar') {
     mergeServiceFiles()
 }
 
-// Ensure the shaded jar is produced during a normal build.
 tasks.named('build') {
     dependsOn 'shadowJar'
 }
 
 if (hasHytaleHome) {
-    // Create the working directory to run the server if it does not already exist.
     def serverRunDir = file("$projectDir/run")
     if (!serverRunDir.exists()) {
         serverRunDir.mkdirs()
@@ -154,8 +158,6 @@ if (hasHytaleHome) {
         dependsOn 'runServerJar'
     }
 
-    // Creates a run configuration in IDEA that will run the Hytale server with
-    // your plugin and the default assets.
     idea.project.settings.runConfigurations {
         'HytaleServer'(org.jetbrains.gradle.ext.Application) {
             mainClass = 'com.hypixel.hytale.Main'
@@ -165,7 +167,6 @@ if (hasHytaleHome) {
         }
     }
 
-    // Creates a launch.json file for VSCode with the same configuration
     tasks.register('generateVSCodeLaunch') {
         def vscodeDir = file("$projectDir/.vscode")
         def launchFile = file("$vscodeDir/launch.json")
