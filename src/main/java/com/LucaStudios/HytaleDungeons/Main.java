@@ -64,8 +64,8 @@ public class Main extends JavaPlugin {
 
         getEventRegistry().registerGlobal(PlayerReadyEvent.class, this::onPlayerReady);
 
-        clickToMoveHandler = new ClickToMoveHandler();
-        clickToMoveHandler.register(this);
+//        clickToMoveHandler = new ClickToMoveHandler();
+//        clickToMoveHandler.register(this);
 
         new RightClickCrossbowHandler().register(this);
 

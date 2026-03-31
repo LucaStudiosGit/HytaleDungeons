@@ -86,6 +86,8 @@ public final class RightClickCrossbowHandler {
         Player player = store.getComponent(entityRef, Player.getComponentType());
         if (player == null) return;
 
+
+
         Inventory inventory = player.getInventory();
         if (inventory == null) return;
 
@@ -94,11 +96,11 @@ public final class RightClickCrossbowHandler {
         savedSlot0Items.putIfAbsent(playerId, getSlot0Snapshot(inventory));
 
         inventory.getHotbar().setItemStackForSlot(FIRING_SLOT, new ItemStack(LOADED_CROSSBOW_ITEM_ID));
-        inventory.setActiveHotbarSlot((byte) FIRING_SLOT);
+        inventory.setActiveHotbarSlot(entityRef, (byte) FIRING_SLOT, store);
 
         EntityStatMap entityStats = store.getComponent(entityRef, EntityStatMap.getComponentType());
         if (entityStats != null) {
-            player.getStatModifiersManager().recalculateEntityStatModifiers(entityRef, entityStats, store);
+            entityStats.getStatModifiersManager().recalculateEntityStatModifiers(entityRef, entityStats, store);
             entityStats.setStatValue(DefaultEntityStatTypes.getAmmo(), LOADED_CROSSBOW_AMMO);
             entityStats.update();
         }
@@ -106,7 +108,6 @@ public final class RightClickCrossbowHandler {
         triggerCrossbowShot(playerRef, entityRef, store, aimTarget);
 
         player.invalidateEquipmentNetwork();
-        player.sendInventory();
 
         scheduleRestore(playerRef);
     }
@@ -236,7 +237,6 @@ public final class RightClickCrossbowHandler {
             }
 
             player.invalidateEquipmentNetwork();
-            player.sendInventory();
         } finally {
             Integer currentVersion = restoreVersions.get(playerId);
             if (currentVersion != null && currentVersion == version) {
