@@ -11,6 +11,7 @@ import com.hypixel.hytale.server.core.entity.Entity;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
 import com.hypixel.hytale.server.core.inventory.Inventory;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
@@ -33,6 +34,7 @@ public final class RightClickCrossbowHandler {
     private static final String LOADED_CROSSBOW_ITEM_ID = "Weapon_Crossbow_Iron";
     private static final float LOADED_CROSSBOW_AMMO = 1.0f;
     private static final String CROSSBOW_PROJECTILE_CONFIG_ID = "Projectile_Config_Arrow_Crossbow";
+    private static final String ARROW_ITEM_ID = "Weapon_Arrow_Crude";
 
     private static final short FIRING_SLOT = 0;
     private static final long RESTORE_DELAY_MS = 360;
@@ -90,6 +92,8 @@ public final class RightClickCrossbowHandler {
 
         Inventory inventory = player.getInventory();
         if (inventory == null) return;
+
+        if (!consumeArrow(inventory)) return;
 
         UUID playerId = playerRef.getUuid();
 
@@ -175,6 +179,24 @@ public final class RightClickCrossbowHandler {
             ProjectileModule.get().spawnProjectile(entityRef, commandBuffer, projectileConfig, spawnPosition, velocity);
             spawned[0] = true;
         });
+    }
+
+    private boolean consumeArrow(Inventory inventory) {
+        return tryConsumeArrowFrom(inventory.getHotbar())
+                || tryConsumeArrowFrom(inventory.getStorage())
+                || tryConsumeArrowFrom(inventory.getBackpack());
+    }
+
+    private boolean tryConsumeArrowFrom(ItemContainer container) {
+        if (container == null) return false;
+        for (short slot = 0; slot < container.getCapacity(); slot++) {
+            ItemStack item = container.getItemStack(slot);
+            if (item != null && !item.isEmpty() && ARROW_ITEM_ID.equals(item.getItemId())) {
+                container.removeItemStackFromSlot(slot, 1);
+                return true;
+            }
+        }
+        return false;
     }
 
     private void scheduleRestore(PlayerRef playerRef) {
