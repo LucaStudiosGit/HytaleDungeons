@@ -81,6 +81,14 @@ dependencies {
         exclude group: "com.hypixel.hytale", module: "Server"
     }
 
+    // Gson — expected to be provided by HytaleServer.jar at runtime
+    compileOnly("com.google.code.gson:gson:2.11.0")
+
+    // Testing
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("com.google.code.gson:gson:2.11.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     // Your other dependencies here
 }
 
@@ -108,6 +116,10 @@ tasks.named('shadowJar') {
 
 tasks.named('build') {
     dependsOn 'shadowJar'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
 
 if (hasHytaleHome) {

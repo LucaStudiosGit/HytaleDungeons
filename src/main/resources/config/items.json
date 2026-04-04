@@ -1,0 +1,21 @@
+[
+  { "id": "wood_sword", "category": "weapon", "displayName": "Wood Sword", "hytaleItemId": "Weapon_Sword_Wood", "baseStat": 3, "rarity": "common", "cooldownMs": 400, "description": "A crude wooden blade." },
+  { "id": "trork_sword", "category": "weapon", "displayName": "Trork Stone Sword", "hytaleItemId": "Weapon_Sword_Stone_Trork", "baseStat": 5, "rarity": "common", "cooldownMs": 400, "description": "Rough but sturdy." },
+  { "id": "iron_sword", "category": "weapon", "displayName": "Iron Sword", "hytaleItemId": "Weapon_Sword_Iron", "baseStat": 8, "rarity": "uncommon", "cooldownMs": 400, "description": "A reliable iron blade." },
+  { "id": "mithril_sword", "category": "weapon", "displayName": "Mithril Sword", "hytaleItemId": "Weapon_Sword_Mithril", "baseStat": 12, "rarity": "rare", "cooldownMs": 350, "description": "Razor sharp and gleaming." },
+  { "id": "copper_axe", "category": "weapon", "displayName": "Copper Axe", "hytaleItemId": "Weapon_Axe_Copper", "baseStat": 4, "rarity": "common", "cooldownMs": 600, "description": "Heavy but slow." },
+  { "id": "trork_axe", "category": "weapon", "displayName": "Trork Stone Axe", "hytaleItemId": "Weapon_Axe_Stone_Trork", "baseStat": 6, "rarity": "common", "cooldownMs": 600, "description": "Packs a solid punch." },
+  { "id": "iron_axe", "category": "weapon", "displayName": "Iron Axe", "hytaleItemId": "Weapon_Axe_Iron", "baseStat": 10, "rarity": "uncommon", "cooldownMs": 550, "description": "Cleaves through enemies." },
+  { "id": "adamantite_axe", "category": "weapon", "displayName": "Adamantite Axe", "hytaleItemId": "Weapon_Axe_Adamantite", "baseStat": 14, "rarity": "rare", "cooldownMs": 500, "description": "Devastating power." },
+  { "id": "daggers", "category": "weapon", "displayName": "Iron Daggers", "hytaleItemId": "Weapon_Daggers_Iron", "baseStat": 6, "rarity": "uncommon", "cooldownMs": 250, "description": "Quick and nimble." },
+  { "id": "mace", "category": "weapon", "displayName": "Mace", "hytaleItemId": "Weapon_Mace_Iron", "baseStat": 11, "rarity": "rare", "cooldownMs": 700, "description": "Crushing blows." },
+
+  { "id": "leather_armor", "category": "armor", "displayName": "Leather Armor", "hytaleItemId": "Armor_Leather_Light_Chest", "baseStat": 2, "rarity": "common", "description": "Light but minimal protection." },
+  { "id": "bronze_armor", "category": "armor", "displayName": "Bronze Armor", "hytaleItemId": "Armor_Bronze_Chest", "baseStat": 4, "rarity": "uncommon", "description": "Solid bronze plates." },
+  { "id": "iron_armor", "category": "armor", "displayName": "Iron Armor", "hytaleItemId": "Armor_Iron_Chest", "baseStat": 6, "rarity": "uncommon", "description": "Sturdy iron plates." },
+  { "id": "adamantite_armor", "category": "armor", "displayName": "Adamantite Armor", "hytaleItemId": "Armor_Adamantite_Chest", "baseStat": 9, "rarity": "rare", "description": "Nearly impenetrable." },
+  { "id": "cobalt_armor", "category": "armor", "displayName": "Cobalt Armor", "hytaleItemId": "Armor_Cobalt_Chest", "baseStat": 5, "rarity": "epic", "description": "Ornate and surprisingly tough." },
+
+  { "id": "ancient_steel_crossbow", "category": "crossbow", "displayName": "Ancient Steel Crossbow", "hytaleItemId": "Weapon_Crossbow_Ancient_Steel", "baseStat": 6, "rarity": "common", "cooldownMs": 700, "description": "A relic that still fires true." },
+  { "id": "iron_crossbow", "category": "crossbow", "displayName": "Iron Crossbow", "hytaleItemId": "Weapon_Crossbow_Iron", "baseStat": 9, "rarity": "uncommon", "cooldownMs": 600, "description": "A dependable crossbow." }
+]

@@ -1,6 +1,7 @@
 package com.LucaStudios.HytaleDungeons.Combat;
 
-import com.LucaStudios.HytaleDungeons.Camera.TopDownView;
+import com.LucaStudios.HytaleDungeons.Loot.ItemDatabase;
+import com.LucaStudios.HytaleDungeons.Loot.ItemDefinition;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
@@ -13,7 +14,6 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent
 import com.hypixel.hytale.server.core.inventory.Inventory;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
-import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 import com.hypixel.hytale.server.core.modules.projectile.ProjectileModule;
@@ -39,6 +39,8 @@ public final class RightClickCrossbowHandler {
     private static final short FIRING_SLOT = 0;
     private static final long RESTORE_DELAY_MS = 360;
 
+    private final CombatManager combatManager;
+
     private final ConcurrentHashMap<UUID, ItemStack> savedSlot0Items = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Integer> restoreVersions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, ScheduledFuture<?>> restoreTasks = new ConcurrentHashMap<>();
@@ -48,6 +50,10 @@ public final class RightClickCrossbowHandler {
         t.setDaemon(true);
         return t;
     });
+
+    public RightClickCrossbowHandler(CombatManager combatManager) {
+        this.combatManager = combatManager;
+    }
 
     public void register(JavaPlugin plugin) {
         plugin.getEventRegistry().registerGlobal(PlayerMouseButtonEvent.class, this::onMouseButton);
@@ -82,20 +88,22 @@ public final class RightClickCrossbowHandler {
     ) {
         if (!entityRef.isValid()) return;
 
+        UUID playerId = playerRef.getUuid();
+
+        // Cooldown check — block the shot entirely if on cooldown
+        ItemDefinition crossbow = ItemDatabase.getInstance().getByHytaleId(LOADED_CROSSBOW_ITEM_ID);
+        if (!combatManager.canRangedAttack(playerId, crossbow)) return;
+
         Vector3d aimTarget = resolveAimTarget(targetEntity, targetBlock);
         if (aimTarget == null) return;
 
         Player player = store.getComponent(entityRef, Player.getComponentType());
         if (player == null) return;
 
-
-
         Inventory inventory = player.getInventory();
         if (inventory == null) return;
 
         if (!consumeArrow(inventory)) return;
-
-        UUID playerId = playerRef.getUuid();
 
         savedSlot0Items.putIfAbsent(playerId, getSlot0Snapshot(inventory));
 
@@ -110,6 +118,7 @@ public final class RightClickCrossbowHandler {
         }
 
         triggerCrossbowShot(playerRef, entityRef, store, aimTarget);
+        combatManager.recordRangedAttack(playerId);
 
         player.invalidateEquipmentNetwork();
 
@@ -157,8 +166,6 @@ public final class RightClickCrossbowHandler {
 
         float yaw = (float) Math.atan2(-dirX, dirZ);
         float pitch = (float) Math.atan2(dy, horizDist);
-
-        TopDownView.faceDirection(playerRef, yaw);
 
         Vector3d spawnOffset = projectileConfig.getCalculatedOffset(yaw, pitch);
         Vector3d spawnPosition = position.add(spawnOffset).add(0.0, 1.5, 0.0);

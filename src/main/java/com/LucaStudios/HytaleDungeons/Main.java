@@ -1,22 +1,18 @@
 package com.LucaStudios.HytaleDungeons;
 
-import com.LucaStudios.HytaleDungeons.Camera.TopDownView;
+import com.LucaStudios.HytaleDungeons.Debug.DebugCommands;
+import com.LucaStudios.HytaleDungeons.Combat.CombatManager;
+import com.LucaStudios.HytaleDungeons.Combat.MeleeCooldownHandler;
 import com.LucaStudios.HytaleDungeons.Combat.RightClickCrossbowHandler;
-import com.LucaStudios.HytaleDungeons.InventoryHandler.InventoryOpenDisabler;
-import com.LucaStudios.HytaleDungeons.Movement.ClickToMoveHandler;
-import com.LucaStudios.HytaleDungeons.Pages.InventoryPage;
+import com.LucaStudios.HytaleDungeons.FloorGen.FloorGenerator;
+import com.LucaStudios.HytaleDungeons.FloorGen.RoomTemplateLibrary;
+import com.LucaStudios.HytaleDungeons.Health.HealthManager;
+import com.LucaStudios.HytaleDungeons.Loot.ItemDatabase;
+import com.LucaStudios.HytaleDungeons.PlayerData.PlayerDataManager;
 import com.LucaStudios.HytaleDungeons.Restrictions.PlayerRestrictions;
-import com.hypixel.hytale.component.ComponentAccessor;
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
-import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
-import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
 import java.util.logging.Level;
@@ -24,10 +20,12 @@ import java.util.logging.Level;
 public class Main extends JavaPlugin {
 
     private static Main instance;
-
-    private InventoryOpenDisabler inventoryOpenDisabler;
-    private ClickToMoveHandler clickToMoveHandler;
     private RightClickCrossbowHandler rightClickCrossbowHandler;
+    private RunStateManager runStateManager;
+    private HealthManager healthManager;
+    private CombatManager combatManager;
+    private PlayerDataManager playerDataManager;
+    private FloorGenerator floorGenerator;
 
     public Main(@Nonnull JavaPluginInit init) {
         super(init);
@@ -38,9 +36,32 @@ public class Main extends JavaPlugin {
         return instance;
     }
 
+    public RunStateManager getRunStateManager() {
+        return runStateManager;
+    }
+
+    public HealthManager getHealthManager() {
+        return healthManager;
+    }
+
+    public CombatManager getCombatManager() {
+        return combatManager;
+    }
+
+    public PlayerDataManager getPlayerDataManager() {
+        return playerDataManager;
+    }
+
+    public FloorGenerator getFloorGenerator() {
+        return floorGenerator;
+    }
+
     @Override
     protected void setup() {
         getLogger().at(Level.INFO).log("HytaleDungeons Plugin start!");
+
+        ItemDatabase.load(msg -> getLogger().at(Level.INFO).log(msg));
+        RoomTemplateLibrary.load(msg -> getLogger().at(Level.INFO).log(msg));
 
         registerEvents();
         registerCommands();
@@ -50,50 +71,47 @@ public class Main extends JavaPlugin {
     public void shutdown() {
         getLogger().at(Level.INFO).log("HytaleDungeons Plugin disabled!");
 
-        if (clickToMoveHandler != null) {
-            clickToMoveHandler.shutdown();
-        }
         if (rightClickCrossbowHandler != null) {
             rightClickCrossbowHandler.shutdown();
+        }
+        if (runStateManager != null) {
+            runStateManager.shutdown();
         }
     }
 
     private void registerEvents() {
-//        inventoryOpenDisabler = new InventoryOpenDisabler(this, new InventoryPage());
-//        inventoryOpenDisabler.register();
+        // Run State Machine — handles player join, disconnect, and run lifecycle
+        runStateManager = new RunStateManager(this);
 
-        getEventRegistry().registerGlobal(PlayerReadyEvent.class, this::onPlayerReady);
+        // Player Data — tracks equipped gear, backpack, XP, and level
+        playerDataManager = new PlayerDataManager(msg -> getLogger().at(Level.INFO).log(msg));
 
-//        clickToMoveHandler = new ClickToMoveHandler();
-//        clickToMoveHandler.register(this);
+        // Health system — tracks HP, damage, and potions
+        healthManager = new HealthManager(runStateManager, msg -> getLogger().at(Level.INFO).log(msg));
+        runStateManager.setHealthManager(healthManager);
+        runStateManager.setPlayerDataManager(playerDataManager);
 
-        new RightClickCrossbowHandler().register(this);
+        // Floor generation — builds dungeon layouts
+        floorGenerator = new FloorGenerator(msg -> getLogger().at(Level.INFO).log(msg));
+        runStateManager.setFloorGenerator(floorGenerator);
+
+        // Combat system — cooldowns, damage calculation
+        combatManager = new CombatManager(runStateManager, healthManager,
+                msg -> getLogger().at(Level.INFO).log(msg));
+
+        runStateManager.register();
+
+        // Ranged attack handler with cooldown enforcement
+        rightClickCrossbowHandler = new RightClickCrossbowHandler(combatManager);
+        rightClickCrossbowHandler.register(this);
+
+        // Melee cooldown enforcement — blocks left-click during weapon cooldown
+        new MeleeCooldownHandler(combatManager).register(this);
 
         new PlayerRestrictions(this).register();
-    }
 
-    private void onPlayerReady(PlayerReadyEvent event) {
-        Ref<EntityStore> entityRef = event.getPlayerRef();
-        Store<EntityStore> store = entityRef.getStore();
-        World world = store.getExternalData().getWorld();
-        ItemStack sword = new ItemStack("Weapon_Sword_Iron", 1);
-        world.execute(() -> {
-            if (!entityRef.isValid()) {
-                return;
-            }
-
-            PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
-            if (playerRef == null) {
-                return;
-            }
-            TopDownView.enable(playerRef);
-
-            Player player = event.getPlayer();
-
-            player.getInventory()
-                    .getHotbar()
-                    .setItemStackForSlot((short) 0, sword);
-        });
+        // Debug commands — remove before release
+        new DebugCommands(runStateManager, floorGenerator).register(this);
     }
 
     private void registerCommands() {

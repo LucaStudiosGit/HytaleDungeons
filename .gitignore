@@ -3,4 +3,5 @@
 /.claude
 /buildSrc
 *.lock
-/.claude
+
+#!/run/universe/worlds/default
