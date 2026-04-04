@@ -1251,3 +1251,10 @@ src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/QuarterFloorBuilder.java
 src/main/java/com/LucaStudios/HytaleDungeons/Main.java
 ---
 
+## Session End: 20260404_233142
+### Commits
+f16ff7c design docs
+### Uncommitted Changes
+.gitignore
+---
+

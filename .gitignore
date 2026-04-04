@@ -1,7 +1,11 @@
-/run
+/run/*
+!/run/universe
+/run/universe/*
+!/run/universe/worlds
+/run/universe/worlds/*
+!/run/universe/worlds/default
 /build
 /.claude
 /buildSrc
 *.lock
 
-#!/run/universe/worlds/default
