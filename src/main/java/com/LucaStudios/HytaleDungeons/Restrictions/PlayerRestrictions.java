@@ -11,9 +11,9 @@ public final class PlayerRestrictions {
     }
 
     public void register() {
-        new NoDamageBlockRestriction(plugin).register();
-        new NoBreakBlockRestriction(plugin).register();
-        new NoHotbarSwitchRestriction(plugin).register();
-        new NoJumpRestriction(plugin).register();
+//        new NoDamageBlockRestriction(plugin).register();
+//        new NoBreakBlockRestriction(plugin).register();
+//        new NoHotbarSwitchRestriction(plugin).register();
+//        new NoJumpRestriction(plugin).register();
     }
 }

@@ -271,7 +271,7 @@ public final class RunStateManager {
             UUID playerId = playerRef.getUuid();
 
             // Set up camera
-            TopDownView.enable(playerRef);
+//            TopDownView.enable(playerRef);
 
             // Create run data — player starts in FLOOR_ACTIVE on floor 1
             RunData data = new RunData(playerId, MAX_LIVES, STARTING_FLOOR);
