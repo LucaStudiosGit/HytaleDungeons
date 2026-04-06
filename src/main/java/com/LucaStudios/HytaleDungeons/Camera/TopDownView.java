@@ -18,7 +18,7 @@ public final class TopDownView {
         ServerCameraSettings settings = new ServerCameraSettings();
         settings.positionLerpSpeed = 0.2f;
         settings.rotationLerpSpeed = 0.2f;
-        settings.distance = 8.0f;
+        settings.distance = 5.0f;
         settings.displayCursor = true;
         settings.allowPitchControls = false;
         settings.isFirstPerson = false;
@@ -26,7 +26,7 @@ public final class TopDownView {
         settings.positionDistanceOffsetType = PositionDistanceOffsetType.DistanceOffset;
         settings.rotationType = RotationType.Custom;
         settings.rotation = new Direction(
-                (float) Math.toRadians(180f),   // yaw — face along +Z (room chain direction)
+                (float) Math.toRadians(165f),   // yaw — offset 15° left of +Z
                 (float) Math.toRadians(-35f), // pitch
                 0f                            // roll
         );
