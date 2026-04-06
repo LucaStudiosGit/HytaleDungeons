@@ -87,7 +87,7 @@ public final class FloorGenerator {
 
         // Place blocks in world
         if (world != null) {
-            placer.placeFloor(floor, world);
+            //placer.placeFloor(floor, world);
         }
 
         // Teleport player to spawn point

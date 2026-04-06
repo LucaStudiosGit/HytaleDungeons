@@ -1,6 +1,6 @@
 # System Design: Floor Generation
 
-> **Status**: Approved
+> **Status**: In Revision (2026-04-05 — single-room-per-floor scope change)
 > **Created**: 2026-04-03
 > **Systems Index**: design/gdd/systems-index.md (#9)
 
@@ -8,212 +8,252 @@
 
 ## 1. Overview
 
-Floor Generation creates each dungeon floor by assembling pre-built room templates
-into a connected layout. When the Run State Machine enters DESCENDING, Floor
-Generation picks a set of rooms from a template library, arranges them on a grid,
-connects them with corridors, and places the spawn point, exit zone, and mob spawn
-locations. Each floor feels different because the room selection, arrangement, and
-mob placement are randomized — but every room is hand-crafted to ensure visual
-quality and gameplay flow. The system outputs a ready-to-play floor with a mob
-count that it reports to the Run State Machine.
+Floor Generation drives the player through 10 hand-built dungeon rooms, one
+per floor. Rooms are pre-built by the designer directly in the world save —
+Floor Gen places no blocks at runtime. It owns per-room metadata (spawn
+point, spawn groups, exit zone) and the floor lifecycle: teleport the player
+in, hand spawn groups to Enemy AI, detect exit-zone entry, advance. Floor N
+always loads room N; clearing floor 10 ends the run in victory.
 
 ---
 
 ## 2. Player Fantasy
 
-Every floor feels like uncharted territory. You step through the entrance and
-don't know what's ahead — is it a tight corridor ambush or an open arena swarm?
-The dungeon never gets familiar. This is the engine behind "One More Floor" —
-curiosity about what's next. The player never thinks about room templates or grid
-layouts; they just experience a dungeon that's different every time they play.
+Each floor is a known arena: you've fought here before. The terrain is
+memorable — this is the columned hall, that's the pit room, this is the
+narrow bridge — and learning its geometry is part of getting better. What
+changes between runs is the threat: which enemy archetypes spawn, which
+waves fire, how your current gear copes. This serves **One More Floor** by
+giving the player checkpoints they recognize — "just get me past the pit
+room" — and **Simple Choices, Big Impact** by letting gear decisions play
+out on familiar ground. The fantasy is mastery through repetition: the
+dungeon doesn't change, **you do**.
 
 ---
 
 ## 3. Detailed Rules
 
-### Floor Layout
+### Room Metadata Schema
 
-- Floors use a **linear chain** layout: Spawn Room → Combat Room(s) → Exit Room
-- Each floor has `ROOMS_PER_FLOOR` rooms (3-5, configurable via tuning knob)
-- Room order: 1 spawn room + (N-2) combat rooms + 1 exit room
-- Rooms are placed sequentially along a single axis, connected by fixed-length corridors
-
-### Room Templates
-
-Each room template is defined by two files:
-1. **Schematic file**: Pre-built block structure (Hytale-compatible format)
-2. **JSON metadata**: Properties for the generation system
+Each floor has one JSON metadata file: `config/rooms/floor_01.json`,
+`floor_02.json`, … `floor_10.json`. The room's blocks are pre-built by the
+designer in the world save; the JSON carries only the gameplay data.
 
 ```json
 {
-  "id": "combat_arena_01",
-  "type": "combat",
-  "size": { "x": 20, "z": 20, "y": 8 },
-  "doors": {
-    "entry": { "x": 10, "y": 0, "z": 0 },
-    "exit": { "x": 10, "y": 0, "z": 19 }
-  },
-  "spawnPoint": { "x": 10, "y": 0, "z": 2 },
-  "exitZone": { "x": 8, "y": 0, "z": 17, "width": 4, "depth": 2 },
-  "mobSpawns": [
-    { "x": 5, "y": 0, "z": 10 },
-    { "x": 15, "y": 0, "z": 10 },
-    { "x": 10, "y": 0, "z": 15 }
+  "floorNumber": 1,
+  "name": "Columned Hall",
+  "worldOrigin": { "x": 0, "y": 100, "z": 0 },
+  "playerSpawnPoint": { "x": 5, "y": 101, "z": 5 },
+  "spawnGroups": [
+    {
+      "id": "floor_01_wave_1",
+      "trigger": { "type": "zone", "x": 8, "z": 10, "width": 4, "depth": 2 },
+      "mobs": [
+        { "x": 3, "y": 101, "z": 15 },
+        { "x": 12, "y": 101, "z": 15 }
+      ],
+      "nextGroup": "floor_01_wave_2"
+    },
+    {
+      "id": "floor_01_wave_2",
+      "trigger": { "type": "on_cleared" },
+      "mobs": [
+        { "x": 7, "y": 101, "z": 20 }
+      ],
+      "nextGroup": null
+    }
   ],
-  "minFloor": 1,
-  "maxFloor": 99,
-  "tags": ["arena", "open"]
+  "exitZone": { "x": 6, "y": 100, "z": 25, "width": 4, "depth": 2 }
 }
 ```
 
-- `spawnPoint`: Required for spawn rooms — player teleport destination. Optional
-  for other room types.
-- `exitZone`: Required for exit rooms — collision trigger area that signals floor
-  completion. Defined as a rectangular area (x, z, width, depth at given y).
+**Field notes:**
 
-### Room Types
+- `worldOrigin`: informational bookmark to the room's reference corner. Not
+  used at runtime; designer reference only.
+- `playerSpawnPoint`: world-absolute coordinates where the player is
+  teleported on floor start.
+- `spawnGroups`: identical schema to the Enemy AI GDD. Floor Gen passes this
+  list straight through to `enemyManager.registerFloor()`.
+- `exitZone`: axis-aligned zone (world-absolute) that, when armed, teleports
+  the player to the next floor.
 
-| Type | Purpose | Count per Floor | Special Properties |
-|------|---------|-----------------|-------------------|
-| **spawn** | Player starts here | Always 1 (first) | No mobs, has spawn point marker |
-| **combat** | Mobs to fight | 1-3 (middle rooms) | Has `mobSpawns` list |
-| **exit** | Floor completion zone | Always 1 (last) | Has exit trigger zone, may have mobs |
+### Coordinate System
 
-### Room Template Library
+All coordinates in room JSON are **world-absolute**. `worldOrigin` exists
+only as a designer bookmark — no runtime offsetting is applied. This keeps
+Floor Gen simple and makes the JSON directly inspectable.
 
-MVP target: **10-15 templates** total:
-- 2-3 spawn room variants
-- 6-8 combat room variants (small arena, large arena, corridor ambush, etc.)
-- 2-3 exit room variants
+### Room Placement in World
 
-### Corridors
+- The designer hand-builds all 10 rooms in the world save before playtest.
+- Rooms may be placed **anywhere** in the world — no fixed layout, axis, or
+  spacing enforced.
+- Floors reuse the same physical rooms across runs — nothing is placed or
+  cleared at runtime.
+- Single-player MVP: no per-player offset. Multiplayer concerns deferred.
 
-- Fixed-length straight corridors connect each room's exit door to the next room's
-  entry door
-- Corridor dimensions: `CORRIDOR_LENGTH` blocks long, 3 blocks wide, 4 blocks tall
-- Corridors are generated programmatically (no templates needed) — walls, floor, ceiling
-- No mobs spawn in corridors
+### Floor Lifecycle
 
-### Generation Process
+**Start of run (floor 1):**
 
-When Run State Machine transitions to DESCENDING, it calls
-`FloorGenerator.generateFloor(playerId, floorNumber, callback)`. Floor Gen then:
+1. Run State Machine enters DESCENDING
+2. Floor Gen loads `config/rooms/floor_01.json`
+3. Floor Gen calls
+   `enemyManager.registerFloor(playerId, world, roomData.spawnGroups)` —
+   Enemy AI arms zone triggers, returns total mob count
+4. Floor Gen calls `runStateManager.setMobCount(playerId, totalMobs)`
+5. Floor Gen teleports player to `roomData.playerSpawnPoint`
+6. Floor Gen starts **exit-zone monitoring** for this floor (initially
+   **disarmed**)
+7. Signal ready → Run State Machine → FLOOR_ACTIVE
 
-1. **Clean up previous floor**: Clear old blocks to air (if any)
-2. **Select room count**: Random between `MIN_ROOMS` and `MAX_ROOMS`
-3. **Pick spawn room**: Random from spawn templates
-4. **Pick combat rooms**: Random from combat templates eligible for `currentFloor`
-   (respecting `minFloor`/`maxFloor`)
-5. **Pick exit room**: Random from exit templates
-6. **Calculate positions**: Place rooms sequentially along the Z axis with corridor gaps
-7. **Place blocks**: Write room schematics and corridor blocks into the world
-8. **Register mob spawns**: Collect all `mobSpawns` positions from placed combat/exit rooms
-9. **Spawn mobs**: Create enemies at spawn positions (mob type/count owned by
-   Difficulty Scaling)
-10. **Set mob count**: Call `RunStateManager.setMobCount(playerId, totalMobs)`
-11. **Teleport player**: Move player to the spawn room's `spawnPoint`
-12. **Signal ready**: Invoke the callback — Run State Machine transitions to FLOOR_ACTIVE
+**During floor (FLOOR_ACTIVE):**
 
-The Run State Machine does **not** use a timer for the DESCENDING→FLOOR_ACTIVE
-transition. It waits for Floor Gen's callback. The `DESCENDING_TRANSITION_DURATION_MS`
-is a minimum visual delay before the callback is invoked (Floor Gen holds the callback
-if generation completes faster than the minimum duration).
+- Enemy AI handles mob spawning via triggers/waves
+- Floor Gen polls player position each tick; checks exit zone only when
+  **armed**
+- When Run State Machine signals "floor cleared" (mobsRemaining == 0),
+  Floor Gen **arms** the exit zone and spawns a visual exit portal at its
+  center
 
-### Mob Respawn on Death
+**Exit-zone entry (armed):**
 
-When the player dies and respawns on the same floor, Floor Gen owns mob respawn:
+1. Player's (x, z) enters the armed exit zone
+2. Floor Gen calls `runStateManager.requestFloorAdvance(playerId)` — Run
+   State Machine transitions to DESCENDING
+3. Run State Machine calls
+   `FloorGenerator.generateFloor(playerId, floorNumber + 1, callback)`
+4. Floor Gen loads next room's JSON, calls `enemyManager.registerFloor()`,
+   teleports player, etc.
 
-1. Run State Machine calls `FloorGenerator.resetMobs(playerId)`
-2. Floor Gen despawns any surviving mobs from the current floor
-3. Floor Gen re-spawns mobs at the original spawn positions (same types/counts)
-4. Floor Gen calls `RunStateManager.setMobCount(playerId, totalMobs)`
+**Advance past floor 10:**
 
-The floor layout (blocks, rooms, corridors) is **not** regenerated — only mobs reset.
+1. Clearing floor 10 arms its exit zone as usual
+2. Entering the exit zone calls `runStateManager.requestRunVictory(playerId)`
+   instead of `requestFloorAdvance`
+3. Run State Machine transitions to VICTORY state (owned by RSM — to be added)
+4. Floor Gen unloads the current room and calls
+   `enemyManager.removePlayer(playerId)`
+
+### Exit Portal
+
+- Visual marker spawned at the exit-zone center when the floor clears.
+  Implementation TBD — options: particle effect, block column, entity
+  marker. Chosen at implementation time based on Hytale API.
+- Portal visibility matches exit-zone armed state. Despawned on teleport out.
+- Portal is **cosmetic** — the authoritative trigger is the exit-zone poll.
+  If portal rendering fails, the zone still works.
+
+### Exit-Zone Arming
+
+- Armed: only when Run State Machine's `mobsRemaining == 0` for this floor
+  (Run State Machine notifies Floor Gen via `onFloorCleared`)
+- Disarmed: on floor start, on player respawn, and after the advance
+  teleport
+
+### Player Respawn on Same Floor
+
+When player dies and respawns:
+
+1. Run State Machine DEAD → FLOOR_ACTIVE transition
+2. Floor Gen calls `enemyManager.resetMobs(playerId)` — despawns survivors,
+   re-arms zone triggers
+3. Floor Gen calls `runStateManager.setMobCount(playerId, totalMobs)` with
+   the pre-counted total
+4. Floor Gen teleports player back to `playerSpawnPoint`
+5. Exit-zone state resets to **disarmed**; portal despawned if present
+
+Room geometry is unchanged (blocks are part of the world, never touched).
+
+### Run Reset (GAME_OVER → new run)
+
+- Floor Gen resets `currentFloor = 1` for the player
+- Start-of-run flow runs again, loading `floor_01.json`
+- Exit-zone state cleared; any active portal despawned
+- Enemy AI state cleared via `enemyManager.removePlayer()`
 
 ### Floor Generation API
 
 ```java
-// Generate a new floor — async, invokes callback when ready
+// Load the floor and position player. Called by Run State Machine.
 void generateFloor(UUID playerId, int floorNumber, Runnable onReady)
 
-// Clean up all floor blocks and mobs for a player
-void cleanupFloor(UUID playerId)
+// Called by Run State Machine when mobsRemaining hits 0 — arms the exit zone.
+void onFloorCleared(UUID playerId)
 
-// Reset mobs to original spawn positions (same floor layout)
+// Delegates to Enemy AI — Floor Gen does not itself reset mobs.
 void resetMobs(UUID playerId)
 
-// Remove all data for a disconnected player
+// Clean up Floor Gen state for a disconnected player.
 void removePlayer(UUID playerId)
 ```
-
-### Floor Placement in World
-
-- Only one floor exists at a time per player (MVP)
-- Previous floor blocks are cleaned up (cleared to air) before the new floor is placed
-- All floors use the same Y position: `FLOOR_Y = 100`
-- Each player's floor is offset on the X axis: `playerFloorX = playerIndex * FLOOR_X_SPACING`
-- This avoids overlap between players without wasting vertical space
 
 ### Interactions with Other Systems
 
 | System | Interaction |
 |--------|------------|
-| **Run State Machine** | Requests floor generation during DESCENDING; receives `setMobCount()` when floor is ready |
-| **Difficulty Scaling** | Provides mob types and counts for the current floor (Floor Gen places them) |
-| **Enemy AI** | Spawned mobs are handed to Enemy AI for behavior management |
-| **Player Data** | Floor Gen does not interact directly — upgrades are handled by Floor Upgrade Selection |
+| **Run State Machine** | Requests floor generation on DESCENDING; calls `onFloorCleared` so Floor Gen arms the exit zone; receives `requestFloorAdvance()` / `requestRunVictory()` on exit-zone entry |
+| **Enemy AI** | Floor Gen passes `spawnGroups` via `registerFloor()`; delegates `resetMobs()`; calls `removePlayer()` on disconnect |
+| **Player Controller** | Player position is polled for exit-zone check; `playerRef` used for teleport |
+| **Player Data** | Floor Gen does not interact directly — upgrades handled by Floor Upgrade Selection |
 
 ---
 
 ## 4. Formulas
 
-### Room Count per Floor
+Floor Generation is a routing/lifecycle system — it has no gameplay math.
+The only "formulas" are:
+
+### Floor Advance
 
 ```
-roomCount = random(MIN_ROOMS, MAX_ROOMS)
-```
-
-Where:
-- `MIN_ROOMS = 3`
-- `MAX_ROOMS = 5`
-
-Combat rooms = `roomCount - 2` (minus 1 spawn + 1 exit). Range: 1-3 combat rooms.
-
-### Floor World Position
-
-```
-floorY = FLOOR_Y  (constant, always 100)
-floorX = playerIndex * FLOOR_X_SPACING
+nextFloor = currentFloor + 1
+if nextFloor > MAX_FLOOR → run victory
+else → load config/rooms/floor_{nextFloor:02d}.json
 ```
 
 Where:
-- `FLOOR_Y = 100` — Y coordinate for all floors (old floor is cleaned up first)
-- `FLOOR_X_SPACING = 200` — horizontal gap between players' floors
 
-### Room Placement Along Z Axis
+- `currentFloor ∈ [1, 10]`
+- `MAX_FLOOR = 10` (MVP)
 
-```
-roomStartZ = previousRoomEndZ + CORRIDOR_LENGTH
-roomEndZ = roomStartZ + roomTemplate.size.z
-```
+### Exit-Zone Containment Check
 
-Where:
-- `CORRIDOR_LENGTH = 8` — blocks between rooms
-- First room starts at Z = 0
-
-### Total Floor Length
+Standard axis-aligned bounding-box test each tick:
 
 ```
-totalZ = sum(roomSizes.z) + (roomCount - 1) * CORRIDOR_LENGTH
+playerInZone = (
+    player.x >= zone.x AND player.x < zone.x + zone.width AND
+    player.z >= zone.z AND player.z < zone.z + zone.depth
+)
 ```
 
-Example: 4 rooms of size 20 + 3 corridors of 8 = 80 + 24 = 104 blocks long.
+No Y check — the zone is a vertical column (player enters at any Y).
 
-### Mob Spawn Count
+### Total Mob Count
 
-Mob count is **not** calculated by Floor Generation — it's the sum of mobs actually
-spawned by Difficulty Scaling at the mob spawn positions provided by room templates.
-Floor Gen reports this count to RunStateManager after spawning.
+```
+totalMobs = sum(group.mobs.length for group in roomData.spawnGroups)
+```
+
+Computed once at floor-start by Enemy AI during `registerFloor()` and
+returned to Floor Gen.
+
+### Example: Floor 1 mob count
+
+`floor_01.json` has:
+
+- wave_1: 2 mobs
+- wave_2: 1 mob
+
+`totalMobs = 2 + 1 = 3`. Pre-counted; all 3 must die before the exit zone arms.
+
+### Removed in 2026-04-05 revision
+
+Room-count, floor world position (X spacing), Z-axis room placement, and
+total floor length — all obsoleted by the single-room-per-floor model.
 
 ---
 
@@ -255,7 +295,9 @@ Floor Gen reports this count to RunStateManager after spawning.
     **Provisional**: until Difficulty Scaling is designed, Floor Gen uses a placeholder
     of 3 basic mobs per spawn point.
 - **Depended on by**:
-  - Enemy AI — mobs are spawned at positions defined by room templates
+  - Enemy AI — consumes flattened `spawnGroups` from room templates via
+    `registerFloor()`; owns all mob spawning, trigger arming, and mob lifecycle.
+    Floor Gen delegates `resetMobs` to Enemy AI.
   - Difficulty Scaling — reads room template data (mob spawn count/positions) to decide
     what to spawn
   - Run State Machine — waits for Floor Gen to signal floor-ready before transitioning

@@ -192,9 +192,9 @@ public final class RunStateManager {
         if (floorGenerator != null) {
             World world = worldFromPlayerRef(playerRef);
             if (world != null) {
-                floorGenerator.generateFloor(playerId, data.getCurrentFloor(), world, playerRef, () -> activateNextFloor(playerId, playerRef));
+                //floorGenerator.generateFloor(playerId, data.getCurrentFloor(), world, playerRef, () -> activateNextFloor(playerId, playerRef));
             } else {
-                floorGenerator.generateFloor(playerId, data.getCurrentFloor(), () -> activateNextFloor(playerId, playerRef));
+                //floorGenerator.generateFloor(playerId, data.getCurrentFloor(), () -> activateNextFloor(playerId, playerRef));
             }
         } else {
             // Fallback: timer-based transition if no floor generator
@@ -271,7 +271,7 @@ public final class RunStateManager {
             UUID playerId = playerRef.getUuid();
 
             // Set up camera
-//            TopDownView.enable(playerRef);
+            TopDownView.enable(playerRef);
 
             // Create run data — player starts in FLOOR_ACTIVE on floor 1
             RunData data = new RunData(playerId, MAX_LIVES, STARTING_FLOOR);

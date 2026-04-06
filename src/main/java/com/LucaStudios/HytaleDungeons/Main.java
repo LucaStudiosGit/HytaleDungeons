@@ -92,8 +92,8 @@ public class Main extends JavaPlugin {
         runStateManager.setPlayerDataManager(playerDataManager);
 
         // Floor generation — builds dungeon layouts
-        floorGenerator = new FloorGenerator(msg -> getLogger().at(Level.INFO).log(msg));
-        runStateManager.setFloorGenerator(floorGenerator);
+//        floorGenerator = new FloorGenerator(msg -> getLogger().at(Level.INFO).log(msg));
+//        runStateManager.setFloorGenerator(floorGenerator);
 
         // Combat system — cooldowns, damage calculation
         combatManager = new CombatManager(runStateManager, healthManager,
