@@ -1,13 +1,19 @@
 package com.LucaStudios.HytaleDungeons.FloorGen;
 
+import com.LucaStudios.HytaleDungeons.Enemies.EnemyManager;
+import com.LucaStudios.HytaleDungeons.Enemies.SpawnGroup;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.math.vector.Vector3d;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -32,14 +38,93 @@ public final class FloorGenerator {
 
     private final ConcurrentHashMap<UUID, FloorData> activeFloors = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Integer> playerIndices = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, ZPlaneWatch> zPlaneWatches = new ConcurrentHashMap<>();
     private int nextPlayerIndex = 0;
 
     private final Consumer<String> logger;
     private final FloorPlacer placer;
+    private final EnemyManager enemyManager;
+    private final ScheduledExecutorService triggerScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "floor-trigger-watcher");
+        t.setDaemon(true);
+        return t;
+    });
 
-    public FloorGenerator(Consumer<String> logger) {
+    public FloorGenerator(EnemyManager enemyManager, Consumer<String> logger) {
         this.logger = logger;
         this.placer = new FloorPlacer(logger);
+        this.enemyManager = enemyManager;
+        triggerScheduler.scheduleAtFixedRate(this::pollZPlaneTriggers, 200, 200, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Per-player state tracking the first-crossing of an xPlane spawn trigger.
+     */
+    private static final class ZPlaneWatch {
+        final PlayerRef playerRef;
+        final World world;
+        final int zPlane;
+        Double prevZ;
+        boolean fired;
+
+        ZPlaneWatch(PlayerRef playerRef, World world, int zPlane) {
+            this.playerRef = playerRef;
+            this.world = world;
+            this.zPlane = zPlane;
+        }
+    }
+
+    private void pollZPlaneTriggers() {
+        for (var entry : zPlaneWatches.entrySet()) {
+            UUID playerId = entry.getKey();
+            ZPlaneWatch watch = entry.getValue();
+            if (watch.fired || watch.world == null || watch.playerRef == null) continue;
+            watch.world.execute(() -> checkZPlaneCrossing(playerId, watch));
+        }
+    }
+
+    private void checkZPlaneCrossing(UUID playerId, ZPlaneWatch watch) {
+        if (watch.fired) return;
+        if (!watch.playerRef.isValid()) {
+            zPlaneWatches.remove(playerId);
+            return;
+        }
+        var transform = watch.playerRef.getTransform();
+        if (transform == null) return;
+        Vector3d pos = transform.getPosition();
+        if (pos == null) return;
+        double currZ = pos.z;
+        if (watch.prevZ == null) {
+            watch.prevZ = currZ;
+            return;
+        }
+        double prev = watch.prevZ;
+        double plane = watch.zPlane;
+        double low = plane - 0.5;
+        double high = plane + 0.5;
+        boolean inBand = currZ >= low && currZ <= high;
+        boolean jumpedOver = (prev < low && currZ > high) || (prev > high && currZ < low);
+        boolean crossed = inBand || jumpedOver;
+        watch.prevZ = currZ;
+        if (crossed) {
+            watch.fired = true;
+            onZPlaneTriggerFired(playerId);
+        }
+    }
+
+    private void onZPlaneTriggerFired(UUID playerId) {
+        FloorData floor = activeFloors.get(playerId);
+        if (floor == null) return;
+        ZPlaneWatch watch = zPlaneWatches.get(playerId);
+        if (watch == null) return;
+        SpawnGroup group = floor.findFirstZoneGroup();
+        if (group == null) {
+            logger.accept("zPlane trigger fired but no zone spawn group on floor " + floor.getFloorNumber());
+            return;
+        }
+        logger.accept("zPlane trigger fired for floor " + floor.getFloorNumber()
+                + " — spawning group " + group.id());
+        enemyManager.spawnGroup(watch.playerRef, watch.world, group);
     }
 
     // ── Public API ──────────────────────────────────────────────────────
@@ -69,7 +154,7 @@ public final class FloorGenerator {
      */
     public void generateFloor(UUID playerId, int floorNumber, World world, PlayerRef playerRef, Runnable onReady) {
         // Clean up old floor if any
-        cleanupFloor(playerId, world);
+//        cleanupFloor(playerId, world);
 
         // Assign a player index for X-offset (stable per session)
         playerIndices.putIfAbsent(playerId, nextPlayerIndex++);
@@ -80,51 +165,71 @@ public final class FloorGenerator {
         FloorData floor = buildFloor(floorNumber, originX, FLOOR_Y);
         activeFloors.put(playerId, floor);
 
-        logger.accept(String.format(
-                "Floor %d generated for %s: %d rooms, %d mob spawns, origin=(%d, %d, %d)",
-                floorNumber, playerId, floor.getRooms().size(), floor.getMobSpawnCount(),
-                floor.getOriginX(), floor.getOriginY(), floor.getOriginZ()));
+        // Arm the zPlane spawn trigger from the first zone-triggered spawn group
+        SpawnGroup zoneGroup = floor.findFirstZoneGroup();
+        if (zoneGroup != null && zoneGroup.zPlane() != 0 && playerRef != null) {
+            zPlaneWatches.put(playerId, new ZPlaneWatch(playerRef, world, zoneGroup.zPlane()));
+        } else {
+            zPlaneWatches.remove(playerId);
+        }
 
-        // Place blocks in world
+//        logger.accept(String.format(
+//                "Floor %d generated for %s: %d rooms, %d mob spawns, origin=(%d, %d, %d)",
+//                floorNumber, playerId, floor.getRooms().size(), floor.getMobSpawnCount(),
+//                floor.getOriginX(), floor.getOriginY(), floor.getOriginZ()));
+
+        logger.accept("Floor " + floor.getFloorNumber() + " built for " + playerId);
+
+        // World-thread operations: block placement, teleport, callback
         if (world != null) {
-            //placer.placeFloor(floor, world);
-        }
+            world.execute(() -> {
+                // Place blocks in world (currently disabled)
+                // placer.placeFloor(floor, world);
 
-        // Teleport player to spawn point
-        if (playerRef != null && world != null) {
-            int[] sp = floor.getPlayerSpawnPoint();
-            placer.teleportPlayer(playerRef, sp[0], sp[1], sp[2]);
-        }
+                //placeTrigger
+                
 
-        // TODO: Spawn mobs at floor.getAllMobSpawns() positions
+                // Teleport player to spawn point
+                if (playerRef != null) {
+                    float[] spawnPoint = floor.getPlayerSpawnPoint();
+                    placer.teleportPlayer(playerRef, spawnPoint[0], spawnPoint[1], spawnPoint[2]);
+                }
 
-        if (onReady != null) {
-            onReady.run();
+                // TODO: Spawn mobs at floor.getAllMobSpawns() positions
+
+                if (onReady != null) {
+                    onReady.run();
+                }
+            });
+        } else {
+            if (onReady != null) {
+                onReady.run();
+            }
         }
     }
 
-    /**
-     * Clean up all floor blocks and mobs for a player (data only, no world changes).
-     */
-    public void cleanupFloor(UUID playerId) {
-        cleanupFloor(playerId, null);
-    }
+//    /**
+//     * Clean up all floor blocks and mobs for a player (data only, no world changes).
+//     */
+//    public void cleanupFloor(UUID playerId) {
+//        cleanupFloor(playerId, null);
+//    }
 
     /**
      * Clean up all floor blocks and mobs for a player.
      *
      * @param world the world to clear blocks in (null to skip block clearing)
      */
-    public void cleanupFloor(UUID playerId, World world) {
-        FloorData old = activeFloors.remove(playerId);
-        if (old != null) {
-            if (world != null) {
-                placer.clearFloor(old, world);
-            }
-            // TODO: Despawn any remaining mobs
-            logger.accept("Cleaned up floor " + old.getFloorNumber() + " for " + playerId);
-        }
-    }
+//    public void cleanupFloor(UUID playerId, World world) {
+//        FloorData old = activeFloors.remove(playerId);
+//        if (old != null) {
+//            if (world != null) {
+//                placer.clearFloor(old, world);
+//            }
+//            // TODO: Despawn any remaining mobs
+//            logger.accept("Cleaned up floor " + old.getFloorNumber() + " for " + playerId);
+//        }
+//    }
 
     /**
      * Reset mobs to original spawn positions (same floor layout).
@@ -148,8 +253,9 @@ public final class FloorGenerator {
      * Remove all data for a disconnected player.
      */
     public void removePlayer(UUID playerId) {
-        cleanupFloor(playerId);
+//        cleanupFloor(playerId);
         playerIndices.remove(playerId);
+        zPlaneWatches.remove(playerId);
     }
 
     /**
@@ -166,38 +272,11 @@ public final class FloorGenerator {
      * This is pure logic — no Hytale API calls.
      */
     FloorData buildFloor(int floorNumber, int originX, int originY) {
-        RoomTemplateLibrary library = RoomTemplateLibrary.getInstance();
-        Random random = new Random();
-
-        int roomCount = MIN_ROOMS + random.nextInt(MAX_ROOMS - MIN_ROOMS + 1);
-        int combatCount = roomCount - 2;
-
-        // Select templates
-        List<RoomTemplate> selectedTemplates = new ArrayList<>();
-        selectedTemplates.add(library.randomSpawnRoom(random));
-        for (int i = 0; i < combatCount; i++) {
-            selectedTemplates.add(library.randomCombatRoom(random, floorNumber));
-        }
-        selectedTemplates.add(library.randomExitRoom(random));
-
-        // Place rooms along the Z axis
-        List<PlacedRoom> placedRooms = new ArrayList<>();
-        int currentZ = 0;
-        int maxSizeX = 0;
-        int maxSizeY = 0;
-
-        for (RoomTemplate template : selectedTemplates) {
-            placedRooms.add(new PlacedRoom(template, originX, originY, currentZ));
-            currentZ += template.sizeZ() + CORRIDOR_LENGTH;
-            maxSizeX = Math.max(maxSizeX, template.sizeX());
-            maxSizeY = Math.max(maxSizeY, template.sizeY());
-        }
-
-        // Total bounds (last room doesn't have a corridor after it)
-        int totalZ = currentZ - CORRIDOR_LENGTH;
-
-        return new FloorData(floorNumber, placedRooms,
-                originX, originY, 0,
-                maxSizeX, maxSizeY, totalZ);
+        FloorTemplateLibrary library = FloorTemplateLibrary.getInstance();
+        FloorTemplate template = library.getTemplate(floorNumber);
+        return new FloorData(
+                floorNumber,
+                new float[]{template.spawnPointX(), template.spawnPointY(), template.spawnPointZ()},
+                template.spawnGroups());
     }
 }

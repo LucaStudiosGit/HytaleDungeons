@@ -1,6 +1,6 @@
 # System Design: Floor Generation
 
-> **Status**: In Revision (2026-04-05 — single-room-per-floor scope change)
+> **Status**: Approved (revised 2026-04-05 — single-room-per-floor model)
 > **Created**: 2026-04-03
 > **Systems Index**: design/gdd/systems-index.md (#9)
 
@@ -259,58 +259,92 @@ total floor length — all obsoleted by the single-room-per-floor model.
 
 ## 5. Edge Cases
 
-- **Not enough templates for the floor**: If fewer eligible templates exist than
-  combat rooms needed, reuse templates (allow duplicates within a floor). Log a warning.
-- **No eligible combat templates for `currentFloor`**: Fall back to any combat
-  template ignoring `minFloor`/`maxFloor` filters. Log a warning.
-- **Floor generation takes longer than expected**: The Run State Machine waits for
-  Floor Gen's callback — the transition doesn't auto-expire. If gen takes >5s, log
-  a warning (performance issue). The `DESCENDING_TRANSITION_DURATION_MS` is a minimum
-  visual delay, not a hard timeout.
-- **Player dies during DESCENDING (while floor is generating)**: Not possible — combat
-  is disabled during DESCENDING state.
-- **Player respawns on same floor after death**: Floor is NOT regenerated. The existing
-  layout persists. Run State Machine calls `FloorGenerator.resetMobs(playerId)` which
-  despawns surviving mobs and re-spawns them at original positions. Floor Gen owns
-  this flow and re-sets `mobsRemaining` via `RunStateManager.setMobCount()`.
-- **New Run from GAME_OVER**: Previous floor blocks are cleared, floor 1 is
-  regenerated from scratch with fresh random selection.
-- **Player disconnects during floor generation**: Generation is cancelled, all
-  placed blocks are cleaned up, run data is discarded.
-- **Room schematic file missing or corrupt**: Skip that template, log an error.
-  If all templates of a type are broken, fail with an error message to the player.
-- **Two players on the same server**: Each player's floor is generated at a different
-  X offset (`playerIndex * FLOOR_X_SPACING`) to prevent overlap. All players use
-  the same Y level (`FLOOR_Y`).
-- **Block placement fails (chunk not loaded)**: Ensure the target area is loaded
-  before placing blocks. Use Hytale's chunk loading API if available.
+- **Room JSON file missing**: Fail loudly at run start — log error, stop
+  generation, send chat message to player ("Floor N config missing").
+  Content bug, not a gameplay case.
+
+- **Room JSON has invalid data** (e.g., `exitZone` missing, negative width,
+  spawn group with 0 mobs): Log error listing the problem, stop generation.
+  Validation runs once at `generateFloor()` time.
+
+- **`playerSpawnPoint` inside a solid block** (author error): Player is
+  teleported there; Hytale handles collision. **Acceptance**: designer
+  verifies spawn points are clear.
+
+- **Exit zone never arms (mobsRemaining > 0 forever)**: Caused by Enemy AI
+  pre-counting a mob that never spawns (blocked spawn position). Floor is
+  unwinnable. Detection: if FLOOR_ACTIVE exceeds 5 minutes, log a warning.
+  Mitigation: designer ensures spawn points are clear.
+
+- **Player enters exit zone before all mobs dead** (exit disarmed): Nothing
+  happens. Zone only fires after arming.
+
+- **Player enters exit zone during DESCENDING**: Not possible — position
+  checks are paused outside FLOOR_ACTIVE.
+
+- **Exit zone entered by something other than player**: Ignored. Zone
+  polling checks player position only.
+
+- **Player dies while standing on exit zone**: Death transitions to DEAD;
+  respawn teleports player back to `playerSpawnPoint`, disarming the exit
+  zone. No double-trigger.
+
+- **Player dies in exit zone on floor 10 after clearing**: `onFloorCleared`
+  is **sticky** — once fired, the exit zone remains armed across respawns
+  on that floor. Victory flow re-triggers on next zone entry.
+
+- **Floor 10 cleared but player leaves before advancing**: On reconnect,
+  `currentFloor` persists (Player Data). Floor 10 loads as fresh (mobs
+  re-spawn via respawn flow). No mid-floor save state in MVP.
+
+- **Player disconnects during floor load**: `removePlayer()` is called.
+  Cancel pending work, clear loaded room data, call
+  `enemyManager.removePlayer()`. No blocks to clean (designer-built world).
+
+- **Player falls off map**: Not Floor Gen's responsibility. Player
+  Controller or Health & Lives handles death from falling.
+
+- **Two players on the same server**: Both share the same 10 rooms (same
+  physical coordinates). Each player has their own mob set (Enemy AI tags
+  by playerId). Exit zone checks run per-player. **Known issue**: both
+  players see each other's enemies; mob damage is cross-player. **Accept
+  for MVP** — multiplayer is deferred.
 
 ---
 
 ## 6. Dependencies
 
-- **Depends on**:
-  - Run State Machine — triggers generation during DESCENDING, receives mob count
-  - Difficulty Scaling (undesigned) — provides mob types and counts per spawn point.
-    **Provisional**: until Difficulty Scaling is designed, Floor Gen uses a placeholder
-    of 3 basic mobs per spawn point.
-- **Depended on by**:
-  - Enemy AI — consumes flattened `spawnGroups` from room templates via
-    `registerFloor()`; owns all mob spawning, trigger arming, and mob lifecycle.
-    Floor Gen delegates `resetMobs` to Enemy AI.
-  - Difficulty Scaling — reads room template data (mob spawn count/positions) to decide
-    what to spawn
-  - Run State Machine — waits for Floor Gen to signal floor-ready before transitioning
-    to FLOOR_ACTIVE
-- **Hytale API dependencies**:
-  - Block placement API (set blocks in world programmatically)
-  - Schematic/structure loading (if available — fallback: manual block-by-block placement)
-  - Entity spawning (create mob entities at positions)
-  - Chunk loading (ensure target area is loaded)
-  - Teleportation (move player to spawn point)
-- **Asset dependencies**:
-  - Room schematic files in `assets/rooms/` directory
-  - Room metadata JSON in `config/rooms/` directory
+### Depends On
+
+- **Run State Machine** — Triggers `generateFloor()` during DESCENDING;
+  calls `onFloorCleared()` when `mobsRemaining == 0` so Floor Gen arms
+  the exit zone; receives `requestFloorAdvance()` / `requestRunVictory()`.
+- **Enemy AI** — Floor Gen passes room `spawnGroups` to
+  `enemyManager.registerFloor()` which returns total mob count; delegates
+  `resetMobs()` to Enemy AI; calls `removePlayer()` on disconnect.
+- **Player Controller** — Provides player position for exit-zone polling
+  and `playerRef` for teleportation.
+
+### Depended On By
+
+- **Enemy AI** — Receives `spawnGroups` from Floor Gen; depends on Floor Gen
+  calling `registerFloor()` and `resetMobs()` at correct lifecycle moments.
+- **Run State Machine** — Waits for Floor Gen's callback before transitioning
+  to FLOOR_ACTIVE; receives floor-advance / victory requests.
+
+### Hytale API Dependencies
+
+- **Teleportation** — `Player.moveTo()` for spawn-point teleport
+- **Chunk loading** — Ensure the room's area is loaded before teleporting
+  the player (if Hytale requires explicit loading)
+- **Entity spawning** (delegated to Enemy AI, not Floor Gen directly)
+
+### Asset Dependencies
+
+- **Room metadata JSON** — `config/rooms/floor_01.json` through
+  `floor_10.json`. Designer-authored.
+- **Room block geometry** — Pre-built by designer in the world save file.
+  Not an asset Floor Gen loads; it exists in the persistent world.
 
 ---
 
@@ -318,31 +352,62 @@ total floor length — all obsoleted by the single-room-per-floor model.
 
 | Knob | Default | Safe Range | Affects |
 |------|---------|-----------|---------|
-| `MIN_ROOMS` | 3 | 2 - 5 | Minimum rooms per floor. Too low = trivial floors. |
-| `MAX_ROOMS` | 5 | 3 - 8 | Maximum rooms per floor. Too high = long clear time, slow pacing. |
-| `CORRIDOR_LENGTH` | 8 | 4 - 16 | Blocks between rooms. Shorter = faster pace. Longer = breathing room. |
-| `FLOOR_Y` | 100 | 50 - 200 | World Y for all floors. Must be within valid world height range. |
-| `FLOOR_X_SPACING` | 200 | 150 - 500 | Horizontal gap between players' floors (multiplayer). |
+| `MAX_FLOOR` | 10 | 5 - 50 | Total floors in a run. Must match number of room JSON files in `config/rooms/`. |
+| `FLOOR_CLEAR_TIMEOUT` | 300s (5 min) | 60 - 600s | Warning threshold for an unwinnable floor (mobsRemaining stuck > 0). |
 
-Note: Mob types, counts, and difficulty per floor are owned by Difficulty Scaling,
-not duplicated here. Room template variety is content, not a code knob.
+Note: Mob types, counts, and difficulty per floor are owned by Difficulty
+Scaling and Enemy AI, not Floor Gen. Room geometry is content, not a code
+knob. Per-room spawn groups, spawn points, and exit zones are authored in
+`config/rooms/floor_XX.json`.
+
+### Removed from prior revision
+
+`MIN_ROOMS`, `MAX_ROOMS`, `CORRIDOR_LENGTH`, `FLOOR_Y`, `FLOOR_X_SPACING` —
+all obsoleted by the single-room-per-floor, designer-positioned model.
 
 ---
 
 ## 8. Acceptance Criteria
 
-- [ ] Floor generation produces a playable floor with spawn point, combat rooms, and exit zone
-- [ ] Room count is between `MIN_ROOMS` and `MAX_ROOMS` (inclusive)
-- [ ] First room is always a spawn type, last room is always an exit type
-- [ ] Rooms are connected by corridors — player can walk from spawn to exit without gaps
-- [ ] Mob spawn positions from room templates are populated with enemies
-- [ ] `RunStateManager.setMobCount()` is called with the correct total mob count
-- [ ] Player is teleported to spawn room's spawn point after generation
-- [ ] Old floor blocks are cleaned up before new floor is placed (same Y position reused)
-- [ ] Previous floor blocks are cleaned up when a new floor is generated
-- [ ] Room templates with `minFloor`/`maxFloor` filters are respected
-- [ ] Template reuse is allowed when not enough unique templates are available
-- [ ] Missing or corrupt schematic files are handled gracefully (skip + log error)
-- [ ] Player respawn on same floor reuses existing layout, resets mobs
-- [ ] New Run generates a fresh floor 1 with new random template selection
-- [ ] Multiple players get floors at separate X offsets
+### Floor Lifecycle
+
+- [ ] `generateFloor(playerId, N)` loads `config/rooms/floor_{N:02d}.json`
+  and teleports the player to `playerSpawnPoint`
+- [ ] `spawnGroups` from the room JSON are passed to
+  `enemyManager.registerFloor()`; returned mob count is forwarded to
+  `runStateManager.setMobCount()`
+- [ ] Exit zone starts **disarmed** on floor start
+- [ ] Exit zone arms when `onFloorCleared()` is called (mobsRemaining == 0)
+- [ ] Exit portal is spawned at the exit-zone center when zone arms
+
+### Floor Advancement
+
+- [ ] Entering the armed exit zone on floors 1-9 calls
+  `requestFloorAdvance()` → loads next floor
+- [ ] Entering the armed exit zone on floor 10 calls
+  `requestRunVictory()` instead
+- [ ] Exit zone is disarmed after the advance teleport
+
+### Player Respawn
+
+- [ ] `resetMobs(playerId)` delegates to `enemyManager.resetMobs()`
+- [ ] `setMobCount()` is re-called with the original pre-counted total
+- [ ] Player is teleported back to `playerSpawnPoint`
+- [ ] Exit zone is disarmed; portal despawned
+
+### Run Reset
+
+- [ ] New run from GAME_OVER loads `floor_01.json` and resets all state
+- [ ] Enemy AI state is cleared via `removePlayer()` → fresh `registerFloor()`
+
+### Error Handling
+
+- [ ] Missing room JSON file → error logged, generation halted, player notified
+- [ ] Invalid JSON data (missing exitZone, bad spawn group) → validation
+  error logged at `generateFloor()` time
+- [ ] Unwinnable floor (5-minute timeout) → warning logged
+
+### Multiplayer (Known Limitations)
+
+- [ ] Two players sharing the same rooms: each has their own mob set and
+  exit-zone poll. Cross-player mob visibility accepted for MVP.

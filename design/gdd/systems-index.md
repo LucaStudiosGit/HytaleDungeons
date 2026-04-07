@@ -31,7 +31,7 @@ descend deeper.
 | 7 | Combat System | Gameplay | MVP | Approved | design/gdd/combat-system.md | Player Controller, Health & Lives, Loot & Item Database |
 | 8 | Player Data | Persistence | MVP | Approved | design/gdd/player-data.md | Loot & Item Database |
 | 9 | Floor Generation | Gameplay | MVP | Approved | design/gdd/floor-generation.md | Run State Machine |
-| 10 | Enemy AI | Gameplay | MVP | Not Started | — | Combat System, Health & Lives, Floor Generation |
+| 10 | Enemy AI | Gameplay | MVP | Approved | design/gdd/enemy-ai.md | Combat System, Health & Lives, Floor Generation |
 | 11 | Level Scaling | Economy | MVP | Not Started | — | Loot & Item Database, Player Data, Enemy AI |
 | 12 | Difficulty Scaling | Gameplay | MVP | Not Started | — | Run State Machine, Enemy AI, Floor Generation |
 | 13 | Floor Upgrade Selection | Economy | MVP | Not Started | — | Run State Machine, Loot & Item Database, Level Scaling |
@@ -140,9 +140,9 @@ Effort estimates: S = 1 session, M = 2-3 sessions, L = 4+ sessions.
 |--------|-------|
 | Total systems identified | 16 |
 | Partial implementations | 4 |
-| Design docs started | 9 |
-| Design docs reviewed | 9 |
-| Design docs approved | 9 |
+| Design docs started | 10 |
+| Design docs reviewed | 10 |
+| Design docs approved | 10 |
 | MVP systems designed | 0/16 |
 
 ---

@@ -2,7 +2,10 @@ package com.LucaStudios.HytaleDungeons.FloorGen;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -35,52 +38,55 @@ public final class FloorPlacer {
      * @param floor the floor data with room positions
      * @param world the world to place blocks in
      */
-    public void placeFloor(FloorData floor, World world) {
-        QuarterFloorBuilder.BlockPlacer blockPlacer = (x, y, z, blockType) ->
-                world.setBlock(x, y, z, blockType);
-
-        QuarterFloorBuilder.buildFloorPlan(
-                blockPlacer,
-                floor.getOriginX(), floor.getOriginY(), floor.getOriginZ(),
-                DEFAULT_WIDTH, DEFAULT_DEPTH,
-                FLOOR_BLOCK, STAIR_BLOCK, WALL_BLOCK
-        );
-
-        logger.accept("Placed quarter-floor for floor " + floor.getFloorNumber()
-                + " at (" + floor.getOriginX() + ", " + floor.getOriginY() + ", " + floor.getOriginZ() + ")"
-                + " size " + DEFAULT_WIDTH + "x" + DEFAULT_DEPTH);
-    }
+//    public void placeFloor(FloorData floor, World world) {
+//        QuarterFloorBuilder.BlockPlacer blockPlacer = (x, y, z, blockType) ->
+//                world.setBlock(x, y, z, blockType);
+//
+//        QuarterFloorBuilder.buildFloorPlan(
+//                blockPlacer,
+//                floor.getOriginX(), floor.getOriginY(), floor.getOriginZ(),
+//                DEFAULT_WIDTH, DEFAULT_DEPTH,
+//                FLOOR_BLOCK, STAIR_BLOCK, WALL_BLOCK
+//        );
+//
+//        logger.accept("Placed quarter-floor for floor " + floor.getFloorNumber()
+//                + " at (" + floor.getOriginX() + ", " + floor.getOriginY() + ", " + floor.getOriginZ() + ")"
+//                + " size " + DEFAULT_WIDTH + "x" + DEFAULT_DEPTH);
+//    }
 
     /**
      * Clear all blocks in the floor's bounding area (fill with air).
      * Must be called from the World thread.
      */
-    public void clearFloor(FloorData floor, World world) {
-        int x1 = floor.getOriginX();
-        int y1 = floor.getOriginY();
-        int z1 = floor.getOriginZ();
-        // Clear the quarter-floor area (+ a few extra Y for stairs/walls)
-        clearBlocks(world, x1, y1, z1, x1 + DEFAULT_WIDTH, y1 + 6, z1 + DEFAULT_DEPTH);
-        logger.accept("Cleared floor " + floor.getFloorNumber() + " area");
-    }
+//    public void clearFloor(FloorData floor, World world) {
+//        int x1 = floor.getOriginX();
+//        int y1 = floor.getOriginY();
+//        int z1 = floor.getOriginZ();
+//        // Clear the quarter-floor area (+ a few extra Y for stairs/walls)
+//        clearBlocks(world, x1, y1, z1, x1 + DEFAULT_WIDTH, y1 + 6, z1 + DEFAULT_DEPTH);
+//        logger.accept("Cleared floor " + floor.getFloorNumber() + " area");
+//    }
 
     /**
-     * Teleport a player to a world position.
+     * Teleport a player to a world position using Hytale's Teleport component.
+     * This is processed by TeleportSystems which handles client sync and chunk loading.
      * Must be called from the World thread.
      */
-    public void teleportPlayer(PlayerRef playerRef, int x, int y, int z) {
+    public void teleportPlayer(PlayerRef playerRef, float x, float y, float z) {
         if (!playerRef.isValid()) return;
 
         Ref<EntityStore> entityRef = playerRef.getReference();
         if (entityRef == null || !entityRef.isValid()) return;
 
         Store<EntityStore> store = entityRef.getStore();
-        Player player = store.getComponent(entityRef, Player.getComponentType());
-        if (player == null) return;
 
-        // moveTo expects doubles, +0.5 to center on block, +1 for above floor
-        player.moveTo(entityRef, x + 0.5, y + 1.0, z + 0.5, store);
-        logger.accept(String.format("Teleported player to (%d, %d, %d)", x, y + 1, z));
+        Teleport teleport = Teleport.createForPlayer(
+                new Vector3d(x, y, z),
+                new Vector3f(0f, 0f, 0f)
+        );
+        store.addComponent(entityRef, Teleport.getComponentType(), teleport);
+
+        logger.accept(String.format("Teleported player to (%f, %f, %f)", x, y, z));
     }
 
     /**

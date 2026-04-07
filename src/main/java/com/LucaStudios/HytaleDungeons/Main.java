@@ -4,8 +4,9 @@ import com.LucaStudios.HytaleDungeons.Debug.DebugCommands;
 import com.LucaStudios.HytaleDungeons.Combat.CombatManager;
 import com.LucaStudios.HytaleDungeons.Combat.MeleeCooldownHandler;
 import com.LucaStudios.HytaleDungeons.Combat.RightClickCrossbowHandler;
+import com.LucaStudios.HytaleDungeons.Enemies.EnemyManager;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorGenerator;
-import com.LucaStudios.HytaleDungeons.FloorGen.RoomTemplateLibrary;
+import com.LucaStudios.HytaleDungeons.FloorGen.FloorTemplateLibrary;
 import com.LucaStudios.HytaleDungeons.Health.HealthManager;
 import com.LucaStudios.HytaleDungeons.Loot.ItemDatabase;
 import com.LucaStudios.HytaleDungeons.PlayerData.PlayerDataManager;
@@ -26,6 +27,7 @@ public class Main extends JavaPlugin {
     private CombatManager combatManager;
     private PlayerDataManager playerDataManager;
     private FloorGenerator floorGenerator;
+    private EnemyManager enemyManager;
 
     public Main(@Nonnull JavaPluginInit init) {
         super(init);
@@ -61,7 +63,7 @@ public class Main extends JavaPlugin {
         getLogger().at(Level.INFO).log("HytaleDungeons Plugin start!");
 
         ItemDatabase.load(msg -> getLogger().at(Level.INFO).log(msg));
-        RoomTemplateLibrary.load(msg -> getLogger().at(Level.INFO).log(msg));
+        FloorTemplateLibrary.load(msg -> getLogger().at(Level.INFO).log(msg));
 
         registerEvents();
         registerCommands();
@@ -86,15 +88,14 @@ public class Main extends JavaPlugin {
         // Player Data — tracks equipped gear, backpack, XP, and level
         playerDataManager = new PlayerDataManager(msg -> getLogger().at(Level.INFO).log(msg));
 
+        enemyManager = new EnemyManager(msg -> getLogger().at(Level.INFO).log(msg));
+        floorGenerator = new FloorGenerator(enemyManager, msg -> getLogger().at(Level.INFO).log(msg));
+
         // Health system — tracks HP, damage, and potions
         healthManager = new HealthManager(runStateManager, msg -> getLogger().at(Level.INFO).log(msg));
         runStateManager.setHealthManager(healthManager);
         runStateManager.setPlayerDataManager(playerDataManager);
-
-        // Floor generation — builds dungeon layouts
-//        floorGenerator = new FloorGenerator(msg -> getLogger().at(Level.INFO).log(msg));
-//        runStateManager.setFloorGenerator(floorGenerator);
-
+        runStateManager.setFloorGenerator(floorGenerator);
         // Combat system — cooldowns, damage calculation
         combatManager = new CombatManager(runStateManager, healthManager,
                 msg -> getLogger().at(Level.INFO).log(msg));

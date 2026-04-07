@@ -6,10 +6,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class RoomTemplateTest {
+class FloorTemplateTest {
 
-    private RoomTemplate makeTemplate(int minFloor, int maxFloor) {
-        return new RoomTemplate(
+    private FloorTemplate makeTemplate(int minFloor, int maxFloor) {
+        return new FloorTemplate(
                 "test_room", RoomType.COMBAT,
                 20, 8, 20,
                 10, 0, 0,
@@ -23,7 +23,7 @@ class RoomTemplateTest {
 
     @Test
     void eligibleForFloor_withinRange() {
-        RoomTemplate t = makeTemplate(2, 5);
+        FloorTemplate t = makeTemplate(2, 5);
         assertTrue(t.isEligibleForFloor(2));
         assertTrue(t.isEligibleForFloor(3));
         assertTrue(t.isEligibleForFloor(5));
@@ -31,14 +31,14 @@ class RoomTemplateTest {
 
     @Test
     void eligibleForFloor_outsideRange() {
-        RoomTemplate t = makeTemplate(2, 5);
+        FloorTemplate t = makeTemplate(2, 5);
         assertFalse(t.isEligibleForFloor(1));
         assertFalse(t.isEligibleForFloor(6));
     }
 
     @Test
     void eligibleForFloor_singleFloor() {
-        RoomTemplate t = makeTemplate(3, 3);
+        FloorTemplate t = makeTemplate(3, 3);
         assertFalse(t.isEligibleForFloor(2));
         assertTrue(t.isEligibleForFloor(3));
         assertFalse(t.isEligibleForFloor(4));

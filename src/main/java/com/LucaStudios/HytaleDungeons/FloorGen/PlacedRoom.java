@@ -7,7 +7,7 @@ import java.util.List;
  * Stores the template reference and world-space coordinates.
  */
 public record PlacedRoom(
-        RoomTemplate template,
+        FloorTemplate template,
         int worldX, int worldY, int worldZ
 ) {
 
@@ -23,19 +23,10 @@ public record PlacedRoom(
     }
 
     /**
-     * Get all mob spawn positions in world coordinates.
-     */
-    public List<int[]> worldMobSpawns() {
-        return template.mobSpawns().stream()
-                .map(this::toWorldMobSpawn)
-                .toList();
-    }
-
-    /**
      * Get the player spawn point in world coordinates (for spawn rooms).
      */
-    public int[] worldSpawnPoint() {
-        return new int[]{
+    public float[] worldSpawnPoint() {
+        return new float[]{
                 worldX + template.spawnPointX(),
                 worldY + template.spawnPointY(),
                 worldZ + template.spawnPointZ()
