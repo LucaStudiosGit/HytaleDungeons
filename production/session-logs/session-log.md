@@ -3235,3 +3235,20 @@ run/universe/worlds/default/resources/Time.json.bak
 src/main/java/com/LucaStudios/HytaleDungeons/Main.java
 ---
 
+## Session End: 20260411_174703
+### Commits
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+---
+
+## Session End: 20260411_174807
+### Commits
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gitignore
+production/session-logs/session-log.md
+---
+

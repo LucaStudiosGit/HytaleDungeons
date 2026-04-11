@@ -6,8 +6,8 @@
 !/run/universe/worlds/default
 /build
 /.claude
-/buildSrc
 *.lock
 
 /.gradle
-/buildSrc
+/buildSrc/.gradle
+/buildSrc/build
