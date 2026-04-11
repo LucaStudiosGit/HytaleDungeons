@@ -9,3 +9,5 @@
 /buildSrc
 *.lock
 
+/.gradle
+/buildSrc

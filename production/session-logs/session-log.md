@@ -2877,3 +2877,361 @@ src/test/java/com/LucaStudios/HytaleDungeons/FloorGen/RoomTypeTest.java
 src/test/java/com/LucaStudios/HytaleDungeons/Health/PlayerHealthTest.java
 ---
 
+## Session End: 20260411_161750
+### Commits
+9aa0a33 Add damage interceptor and death observers
+---
+
+## Session End: 20260411_163104
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/session-log.md
+---
+
+## Session End: 20260411_164121
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+
+## Session End: 20260411_164543
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+
+## Session End: 20260411_164658
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Restrictions/PlayerRestrictions.java
+---
+
+## Session End: 20260411_165027
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Restrictions/PlayerRestrictions.java
+---
+
+## Session End: 20260411_165152
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Restrictions/PlayerRestrictions.java
+---
+
+## Session End: 20260411_165812
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/checksums/checksums.lock
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Restrictions/PlayerRestrictions.java
+---
+
+## Session End: 20260411_170101
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/checksums/checksums.lock
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/file-system.probe
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260411_170332
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/checksums/checksums.lock
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/file-system.probe
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260411_170744
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/checksums/checksums.lock
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/file-system.probe
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260411_171645
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/checksums/checksums.lock
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/file-system.probe
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260411_172324
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/file-system.probe
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260411_172525
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/checksums/checksums.lock
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/file-system.probe
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/config.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260411_172743
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
+build.gradle
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/file-system.probe
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/config.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260411_173538
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
+build.gradle
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/file-system.probe
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/config.json
+run/universe/worlds/default/config.json.bak
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260411_174023
+### Commits
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+.gradle/9.2.0/executionHistory/executionHistory.bin
+.gradle/9.2.0/executionHistory/executionHistory.lock
+.gradle/9.2.0/fileHashes/fileHashes.bin
+.gradle/9.2.0/fileHashes/fileHashes.lock
+.gradle/9.2.0/fileHashes/resourceHashesCache.bin
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/file-system.probe
+build.gradle
+buildSrc/.gradle/9.2.0/executionHistory/executionHistory.lock
+buildSrc/.gradle/buildOutputCleanup/buildOutputCleanup.lock
+buildSrc/.gradle/file-system.probe
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/config.json
+run/universe/worlds/default/config.json.bak
+run/universe/worlds/default/resources/SpawnSuppressionController.json
+run/universe/worlds/default/resources/SpawnSuppressionController.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
