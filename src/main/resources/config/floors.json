@@ -11,10 +11,10 @@
         "zones": [
           { "x0": 25.5, "y0": 208, "z0": 8.5,
             "x1": 13.5, "y1": 208, "z1": 12.5,
-            "count":  5 },
+            "count":  1 },
           { "x0": 25.5, "y0": 208, "z0": 15.5,
             "x1": 13.5, "y1": 208, "z1": 29.5,
-            "count":  17 }
+            "count":  1 }
         ],
         "nextGroup": "floor_01_wave_2"
       },
@@ -24,10 +24,45 @@
         "zones": [
           { "x0": 25.5, "y0": 208, "z0": 8.5,
             "x1": 13.5, "y1": 208, "z1": 12.5,
-            "count":  5 },
+            "count":  1 },
           { "x0": 25.5, "y0": 208, "z0": 15.5,
             "x1": 13.5, "y1": 208, "z1": 29.5,
-            "count":  17 }
+            "count":  1 }
+        ],
+        "nextGroup": null
+      }
+    ],
+    "exitZone": { "x": 6, "y": 100, "z": 25, "width": 4, "depth": 2 }
+  },
+  {
+    "floorNumber": 2,
+    "name": "Columned Hall II",
+    "worldOrigin": { "x": 0, "y": 100, "z": 0 },
+    "playerSpawnPoint": { "x": 19.5, "y": 210, "z": 4.5 },
+    "spawnGroups": [
+      {
+        "id": "floor_02_wave_1",
+        "trigger": { "type": "zone", "zPlane": 7},
+        "zones": [
+          { "x0": 25.5, "y0": 208, "z0": 8.5,
+            "x1": 13.5, "y1": 208, "z1": 12.5,
+            "count":  1 },
+          { "x0": 25.5, "y0": 208, "z0": 15.5,
+            "x1": 13.5, "y1": 208, "z1": 29.5,
+            "count":  1 }
+        ],
+        "nextGroup": "floor_02_wave_2"
+      },
+      {
+        "id": "floor_02_wave_2",
+        "trigger": { "type": "on_cleared" },
+        "zones": [
+          { "x0": 25.5, "y0": 208, "z0": 8.5,
+            "x1": 13.5, "y1": 208, "z1": 12.5,
+            "count":  1 },
+          { "x0": 25.5, "y0": 208, "z0": 15.5,
+            "x1": 13.5, "y1": 208, "z1": 29.5,
+            "count":  1 }
         ],
         "nextGroup": null
       }

@@ -1,24 +1,21 @@
 package com.LucaStudios.HytaleDungeons.Combat;
 
-import com.LucaStudios.HytaleDungeons.Health.HealthManager;
 import com.LucaStudios.HytaleDungeons.Loot.ItemDefinition;
 import com.LucaStudios.HytaleDungeons.Run.RunData;
 import com.LucaStudios.HytaleDungeons.Run.RunState;
 import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
-import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Manages combat logic: attack cooldowns, damage calculation, and enemy HP.
+ * Manages combat logic: attack cooldowns and damage calculation.
  * Bridges Hytale's native attacks to our damage pipeline.
  */
 public final class CombatManager {
 
     private final RunStateManager runStateManager;
-    private final HealthManager healthManager;
     private final Consumer<String> logger;
 
     /** Per-player timestamp of last melee attack (for cooldown enforcement). */
@@ -27,10 +24,8 @@ public final class CombatManager {
     /** Per-player timestamp of last ranged attack (for cooldown enforcement). */
     private final ConcurrentHashMap<UUID, Long> lastRangedTime = new ConcurrentHashMap<>();
 
-    public CombatManager(RunStateManager runStateManager, HealthManager healthManager,
-                         Consumer<String> logger) {
+    public CombatManager(RunStateManager runStateManager, Consumer<String> logger) {
         this.runStateManager = runStateManager;
-        this.healthManager = healthManager;
         this.logger = logger;
     }
 
@@ -96,21 +91,6 @@ public final class CombatManager {
      */
     public int calculateRangedDamage(ItemDefinition crossbow, int playerLevel) {
         return crossbow.getEffectiveStat(playerLevel);
-    }
-
-    /**
-     * Process damage from an enemy to a player.
-     * Delegates to HealthManager which handles armor reduction and death.
-     *
-     * @param playerId target player
-     * @param playerRef target player ref
-     * @param enemyAttackDamage raw damage from the enemy type
-     * @param playerDamageReduction equipped armor's effective stat
-     * @return actual damage dealt after armor reduction
-     */
-    public int processEnemyDamageToPlayer(UUID playerId, PlayerRef playerRef,
-                                           int enemyAttackDamage, int playerDamageReduction) {
-        return healthManager.takeDamage(playerId, playerRef, enemyAttackDamage, playerDamageReduction);
     }
 
     /**

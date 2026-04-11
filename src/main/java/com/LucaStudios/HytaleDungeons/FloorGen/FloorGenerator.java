@@ -156,6 +156,10 @@ public final class FloorGenerator {
         // Clean up old floor if any
 //        cleanupFloor(playerId, world);
 
+        // Remove any mobs left over from the previous floor — including NPCs that
+        // survived a server restart and aren't in our per-player tracking.
+        enemyManager.cleanAllEntities();
+
         // Assign a player index for X-offset (stable per session)
         playerIndices.putIfAbsent(playerId, nextPlayerIndex++);
         int playerIndex = playerIndices.get(playerId);
@@ -172,6 +176,9 @@ public final class FloorGenerator {
         } else {
             zPlaneWatches.remove(playerId);
         }
+
+        // Register all spawn groups for chain (on_cleared) lookups + live-count tracking.
+        enemyManager.registerFloor(playerId, playerRef, world, floor.getSpawnGroups());
 
 //        logger.accept(String.format(
 //                "Floor %d generated for %s: %d rooms, %d mob spawns, origin=(%d, %d, %d)",
@@ -263,6 +270,19 @@ public final class FloorGenerator {
      */
     public FloorData getActiveFloor(UUID playerId) {
         return activeFloors.get(playerId);
+    }
+
+    /**
+     * Teleport a player to the spawn point of their currently active floor.
+     * No-op if the player has no active floor or the ref is invalid.
+     * Must be called from the world thread.
+     */
+    public void teleportToActiveFloorSpawn(UUID playerId, PlayerRef playerRef) {
+        FloorData floor = activeFloors.get(playerId);
+        if (floor == null || playerRef == null || !playerRef.isValid()) return;
+        float[] sp = floor.getPlayerSpawnPoint();
+        if (sp == null || sp.length < 3) return;
+        placer.teleportPlayer(playerRef, sp[0], sp[1], sp[2]);
     }
 
     // ── Generation Logic ────────────────────────────────────────────────

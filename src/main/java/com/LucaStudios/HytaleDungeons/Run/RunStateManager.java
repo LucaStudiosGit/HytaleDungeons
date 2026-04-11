@@ -3,6 +3,7 @@ package com.LucaStudios.HytaleDungeons.Run;
 import com.LucaStudios.HytaleDungeons.Camera.TopDownView;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorData;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorGenerator;
+import com.LucaStudios.HytaleDungeons.FloorGen.FloorTemplateLibrary;
 import com.LucaStudios.HytaleDungeons.Health.HealthManager;
 import com.LucaStudios.HytaleDungeons.PlayerData.PlayerDataManager;
 import com.hypixel.hytale.component.Ref;
@@ -11,6 +12,7 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -138,7 +140,8 @@ public final class RunStateManager {
     }
 
     /**
-     * Called by the enemy/floor system when a mob is killed.
+     * Called by the enemy/floor system when a mob is killed. When the last
+     * mob on the floor dies, automatically advance to the next floor.
      */
     public void onMobKilled(UUID playerId) {
         RunData data = runs.get(playerId);
@@ -147,6 +150,59 @@ public final class RunStateManager {
         }
         data.decrementMobs();
         log("Mob killed for player %s — %d remaining", playerId, data.getMobsRemaining());
+
+        if (data.getMobsRemaining() <= 0) {
+            advanceFloor(playerId, data);
+        }
+    }
+
+    /**
+     * Transition a player to the next floor: bump {@code currentFloor}, set
+     * state to {@code DESCENDING}, regen HP, and kick off floor generation.
+     * When generation finishes the state lands back in {@code FLOOR_ACTIVE}.
+     * If there is no next floor, logs a win and leaves the run on the
+     * current floor (TODO: proper win screen).
+     */
+    private void advanceFloor(UUID playerId, RunData data) {
+        PlayerRef playerRef = data.getPlayerRef();
+
+        FloorTemplateLibrary library = FloorTemplateLibrary.getInstance();
+        int nextFloor = data.getCurrentFloor() + 1;
+        if (library == null || nextFloor > library.floorCount()) {
+            log("Player %s cleared the final floor %d — dungeon complete!",
+                    playerId, data.getCurrentFloor());
+            // TODO: show win screen / end run via proper state transition
+            return;
+        }
+
+        RunState oldState = data.getState();
+        data.setCurrentFloor(nextFloor);
+        data.setState(RunState.DESCENDING);
+        fireStateChange(playerId, oldState, RunState.DESCENDING, data);
+
+        log("Player %s advancing to floor %d", playerId, nextFloor);
+
+        // Refill HP before the next floor.
+        if (healthManager != null) {
+            healthManager.resetHealth(playerId);
+        }
+
+        // Regenerate the floor (despawns stale mobs, rebuilds geometry,
+        // teleports to new spawn, re-arms zone triggers). When ready, flip
+        // state to FLOOR_ACTIVE and seed mob count from the generated floor.
+        if (floorGenerator != null && playerRef != null && playerRef.isValid()) {
+            World world = worldFromPlayerRef(playerRef);
+            floorGenerator.generateFloor(playerId, nextFloor, world, playerRef, () -> {
+                RunState descending = data.getState();
+                data.setState(RunState.FLOOR_ACTIVE);
+                fireStateChange(playerId, descending, RunState.FLOOR_ACTIVE, data);
+                FloorData floor = floorGenerator.getActiveFloor(playerId);
+                if (floor != null) {
+                    data.setMobsRemaining(floor.getMobSpawnCount());
+                }
+                TopDownView.enable(playerRef);
+            });
+        }
     }
 
     /**
@@ -275,14 +331,15 @@ public final class RunStateManager {
 
             // Create run data — player starts in FLOOR_ACTIVE on floor 1
             RunData data = new RunData(playerId, MAX_LIVES, STARTING_FLOOR);
+            data.setPlayerRef(playerRef);
             runs.put(playerId, data);
 
             // Equip default loadout
             equipDefaultLoadout(playerRef);
 
-            // Initialize health tracking
+            // Initialize health tracking — mirrors our MAX_HP onto the native HP bar
             if (healthManager != null) {
-                healthManager.initPlayer(playerId);
+                healthManager.initPlayer(playerId, playerRef, entityRef, store);
             }
 
             // Initialize player data (equipped gear, backpack, XP, level)
@@ -335,22 +392,14 @@ public final class RunStateManager {
             data.setState(RunState.FLOOR_ACTIVE);
             fireStateChange(playerId, oldState, RunState.FLOOR_ACTIVE, data);
 
-            // Reset HP to full on respawn
-            if (healthManager != null) {
-                healthManager.resetHealth(playerId);
-            }
-
             log("Player %s respawned on floor %d (%d lives left)", playerId, data.getCurrentFloor(), data.getLivesRemaining());
 
-            // Reset floor mobs to original positions
-            if (floorGenerator != null) {
-                int mobCount = floorGenerator.resetMobs(playerId);
-                if (mobCount >= 0) {
-                    data.setMobsRemaining(mobCount);
-                }
+            // Revive on the world thread: clear DeathComponent, refill HP,
+            // regenerate the floor (same as !regen), and re-snap the top-down camera.
+            World world = worldFromPlayerRef(playerRef);
+            if (world != null) {
+                world.execute(() -> revivePlayer(playerId, playerRef));
             }
-            // TODO: Teleport player to floor spawn
-            // TODO: Re-snap camera: TopDownView.enable(playerRef)
         } else {
             // Game over
             RunState oldState = data.getState();
@@ -391,6 +440,48 @@ public final class RunStateManager {
         // Re-snap camera after teleport
         // TODO: TopDownView.enable(playerRef) after teleport
         // TODO: Teleport player to new floor spawn
+    }
+
+    /**
+     * World-thread revival: clear the native {@link DeathComponent}, refill HP
+     * via {@link HealthManager#resetHealth}, regenerate the current floor (same
+     * behavior as {@code !regen}), and re-enable the top-down camera.
+     */
+    private void revivePlayer(UUID playerId, PlayerRef playerRef) {
+        if (playerRef == null || !playerRef.isValid()) return;
+        Ref<EntityStore> entityRef = playerRef.getReference();
+        if (entityRef == null || !entityRef.isValid()) return;
+        Store<EntityStore> store = entityRef.getStore();
+
+        // Clear the native death component so the player is "alive" again.
+        try {
+            store.removeComponent(entityRef, DeathComponent.getComponentType());
+        } catch (Throwable t) {
+            log("revivePlayer: failed to remove DeathComponent for %s: %s",
+                    playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+        }
+
+        // Refill HP (writes native HEALTH stat back to MAX_HP).
+        if (healthManager != null) {
+            healthManager.resetHealth(playerId);
+        }
+
+        // Re-snap the top-down camera.
+        TopDownView.enable(playerRef);
+
+        // Full floor regen — despawn old mobs, rebuild geometry, re-spawn mobs,
+        // teleport to floor spawn. Mirrors what DebugCommands !regen does.
+        if (floorGenerator != null) {
+            RunData data = runs.get(playerId);
+            int floor = (data != null) ? data.getCurrentFloor() : STARTING_FLOOR;
+            World world = store.getExternalData().getWorld();
+            floorGenerator.generateFloor(playerId, floor, world, playerRef, () -> {
+                FloorData floorData = floorGenerator.getActiveFloor(playerId);
+                if (floorData != null && data != null) {
+                    data.setMobsRemaining(floorData.getMobSpawnCount());
+                }
+            });
+        }
     }
 
     private void equipDefaultLoadout(PlayerRef playerRef) {

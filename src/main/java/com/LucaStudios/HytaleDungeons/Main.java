@@ -88,7 +88,7 @@ public class Main extends JavaPlugin {
         // Player Data — tracks equipped gear, backpack, XP, and level
         playerDataManager = new PlayerDataManager(msg -> getLogger().at(Level.INFO).log(msg));
 
-        enemyManager = new EnemyManager(msg -> getLogger().at(Level.INFO).log(msg));
+        enemyManager = new EnemyManager(runStateManager, msg -> getLogger().at(Level.INFO).log(msg));
         floorGenerator = new FloorGenerator(enemyManager, msg -> getLogger().at(Level.INFO).log(msg));
 
         // Health system — tracks HP, damage, and potions
@@ -97,8 +97,27 @@ public class Main extends JavaPlugin {
         runStateManager.setPlayerDataManager(playerDataManager);
         runStateManager.setFloorGenerator(floorGenerator);
         // Combat system — cooldowns, damage calculation
-        combatManager = new CombatManager(runStateManager, healthManager,
+        combatManager = new CombatManager(runStateManager,
                 msg -> getLogger().at(Level.INFO).log(msg));
+
+        // ECS damage interceptor — rewrites player↔mob damage with our formulas
+        // and hands off to the native pipeline for HP / FX / death.
+        getEntityStoreRegistry().registerSystem(
+                new com.LucaStudios.HytaleDungeons.Combat.DamageInterceptor(
+                        enemyManager, combatManager, playerDataManager));
+
+        // ECS death observer — bridges native DeathComponent back to our
+        // live-count / chain-spawn bookkeeping.
+        getEntityStoreRegistry().registerSystem(
+                new com.LucaStudios.HytaleDungeons.Enemies.MobDeathObserver(
+                        enemyManager,
+                        msg -> getLogger().at(Level.INFO).log(msg)));
+
+        // ECS death observer — catches player deaths and triggers our respawn flow.
+        getEntityStoreRegistry().registerSystem(
+                new com.LucaStudios.HytaleDungeons.Health.PlayerDeathObserver(
+                        runStateManager,
+                        msg -> getLogger().at(Level.INFO).log(msg)));
 
         runStateManager.register();
 

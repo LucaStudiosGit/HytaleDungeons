@@ -1,5 +1,7 @@
 package com.LucaStudios.HytaleDungeons.Run;
 
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+
 import java.util.UUID;
 
 /**
@@ -12,6 +14,7 @@ public final class RunData {
     private int currentFloor;
     private int livesRemaining;
     private int mobsRemaining;
+    private PlayerRef playerRef;
 
     public RunData(UUID playerId, int maxLives, int startingFloor) {
         this.playerId = playerId;
@@ -19,6 +22,14 @@ public final class RunData {
         this.currentFloor = startingFloor;
         this.livesRemaining = maxLives;
         this.mobsRemaining = 0;
+    }
+
+    public PlayerRef getPlayerRef() {
+        return playerRef;
+    }
+
+    void setPlayerRef(PlayerRef playerRef) {
+        this.playerRef = playerRef;
     }
 
     public UUID getPlayerId() {
