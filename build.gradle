@@ -76,8 +76,8 @@ dependencies {
         throw new GradleException("Hytale home not found, cannot compile against live HytaleServer.jar")
     }
 
-    // HyUI should be present separately at runtime
-    compileOnly("curse.maven:hyui-1431415:7713977") {
+    // HyUI bundled into the shadow jar
+    implementation("curse.maven:hyui-1431415:7713977") {
         exclude group: "com.hypixel.hytale", module: "Server"
     }
 

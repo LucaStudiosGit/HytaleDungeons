@@ -12,6 +12,7 @@ import com.LucaStudios.HytaleDungeons.Loot.ItemDatabase;
 import com.LucaStudios.HytaleDungeons.PlayerData.PlayerDataManager;
 import com.LucaStudios.HytaleDungeons.Restrictions.PlayerRestrictions;
 import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
+import com.LucaStudios.HytaleDungeons.UI.MainMenuPage;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
@@ -129,6 +130,9 @@ public class Main extends JavaPlugin {
         new MeleeCooldownHandler(combatManager).register(this);
 
         new PlayerRestrictions(this).register();
+
+        // Epic A — main menu modal page on join
+        new MainMenuPage(this).register();
 
         // Debug commands — remove before release
         new DebugCommands(runStateManager, floorGenerator).register(this);
