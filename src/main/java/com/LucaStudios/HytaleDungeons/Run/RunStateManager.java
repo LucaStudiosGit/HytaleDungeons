@@ -1,6 +1,7 @@
 package com.LucaStudios.HytaleDungeons.Run;
 
 import com.LucaStudios.HytaleDungeons.Camera.TopDownView;
+import com.LucaStudios.HytaleDungeons.Visual.FullBright;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorData;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorGenerator;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorTemplateLibrary;
@@ -325,6 +326,9 @@ public final class RunStateManager {
             }
 
             UUID playerId = playerRef.getUuid();
+
+            // Enable fullbright — attaches max-brightness DynamicLight to the player
+            FullBright.apply(playerRef);
 
             // Set up camera
             TopDownView.enable(playerRef);
