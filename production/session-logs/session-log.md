@@ -3252,3 +3252,396 @@ src/main/java/com/LucaStudios/HytaleDungeons/Main.java
 production/session-logs/session-log.md
 ---
 
+## Session End: 20260411_174937
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+---
+
+## Session End: 20260411_175230
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260411_175755
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260411_180126
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260411_180558
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260411_181430
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260411_183342
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_183932
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_184226
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_184741
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_185343
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_191245
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_200236
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_201233
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_203425
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_203806
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260411_204942
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+src/main/resources/Common/UI/Custom/HUD/Images/HeartIcon.png
+---
+
+## Session End: 20260411_210253
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+src/main/resources/Common/UI/Custom/HUD/Images/HeartIcon.png
+---
+
+## Session End: 20260411_211718
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+src/main/resources/Common/UI/Custom/HUD/Images/HeartIcon.png
+---
+
+## Session End: 20260411_211956
+### Commits
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+src/main/resources/Common/UI/Custom/HUD/Images/HeartIcon.png
+---
+
+## Session End: 20260411_220312
+### Commits
+07de479 Merge branch 'main' of https://github.com/LucaStudiosGit/HytaleDungeons
+6c2bcaa Update default world chunks and time
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+src/main/resources/Common/UI/Custom/HUD/Images/HeartIcon.png
+---
+

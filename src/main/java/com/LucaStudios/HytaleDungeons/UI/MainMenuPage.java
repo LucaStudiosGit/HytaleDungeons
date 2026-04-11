@@ -32,7 +32,7 @@ public final class MainMenuPage {
     static final String BTN_START = "btn_start";
     static final String BTN_DISCORD = "btn_discord";
     static final String BTN_QUIT = "btn_quit";
-    static final String DISCONNECT_REASON = "You chose to quit.";
+    static final String DISCONNECT_REASON = "Thanks for playing!\nJoin our Discord: discord.gg/WTdNGetHsP";
     static final String DISCORD_CHAT_PREFIX = "Join our Discord: ";
 
     /** Abstracts the opened HyUI page so tests don't need HyUI on the classpath. */

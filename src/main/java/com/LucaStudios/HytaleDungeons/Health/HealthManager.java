@@ -130,6 +130,38 @@ public final class HealthManager {
         return Math.max(0L, state.potionCooldownEndMs - System.currentTimeMillis());
     }
 
+    /**
+     * Read current HP from the native HEALTH stat. Returns -1 if the player
+     * is unknown, invalid, or the stat is missing. Must be called from the
+     * world thread.
+     */
+    public float getCurrentHp(UUID playerId) {
+        EntityStatValue hp = readHp(playerId);
+        return hp == null ? -1f : hp.get();
+    }
+
+    /**
+     * Read max HP from the native HEALTH stat. Returns -1 if the player is
+     * unknown, invalid, or the stat is missing. Must be called from the
+     * world thread.
+     */
+    public float getMaxHp(UUID playerId) {
+        EntityStatValue hp = readHp(playerId);
+        return hp == null ? -1f : hp.getMax();
+    }
+
+    private EntityStatValue readHp(UUID playerId) {
+        PlayerHpState state = states.get(playerId);
+        if (state == null) return null;
+        PlayerRef playerRef = state.playerRef;
+        if (playerRef == null || !playerRef.isValid()) return null;
+        Ref<EntityStore> entityRef = playerRef.getReference();
+        if (entityRef == null || !entityRef.isValid()) return null;
+        EntityStatMap statMap = entityRef.getStore().getComponent(entityRef, EntityStatMap.getComponentType());
+        if (statMap == null) return null;
+        return statMap.get(DefaultEntityStatTypes.getHealth());
+    }
+
     // ── Native stat helpers ──────────────────────────────────────────────
 
     /**
