@@ -153,19 +153,12 @@ public final class FloorGenerator {
      * @param onReady callback invoked when the floor is ready to play
      */
     public void generateFloor(UUID playerId, int floorNumber, World world, PlayerRef playerRef, Runnable onReady) {
-        // Clean up old floor if any
-//        cleanupFloor(playerId, world);
-
-        // Remove any mobs left over from the previous floor — including NPCs that
-        // survived a server restart and aren't in our per-player tracking.
-        enemyManager.cleanAllEntities();
-
         // Assign a player index for X-offset (stable per session)
         playerIndices.putIfAbsent(playerId, nextPlayerIndex++);
         int playerIndex = playerIndices.get(playerId);
         int originX = playerIndex * FLOOR_X_SPACING;
 
-        // Build the floor layout
+        // Build the floor layout (pure data, any thread)
         FloorData floor = buildFloor(floorNumber, originX, FLOOR_Y);
         activeFloors.put(playerId, floor);
 
@@ -177,24 +170,28 @@ public final class FloorGenerator {
             zPlaneWatches.remove(playerId);
         }
 
-        // Register all spawn groups for chain (on_cleared) lookups + live-count tracking.
-        enemyManager.registerFloor(playerId, playerRef, world, floor.getSpawnGroups());
-
-//        logger.accept(String.format(
-//                "Floor %d generated for %s: %d rooms, %d mob spawns, origin=(%d, %d, %d)",
-//                floorNumber, playerId, floor.getRooms().size(), floor.getMobSpawnCount(),
-//                floor.getOriginX(), floor.getOriginY(), floor.getOriginZ()));
-
         logger.accept("Floor " + floor.getFloorNumber() + " built for " + playerId);
 
-        // World-thread operations: block placement, teleport, callback
+        // World-thread operations: mob cleanup, block placement, teleport, callback.
+        // Mob removal MUST run on the world thread (Store.removeEntity requirement).
+        // We pre-remove tracked mobs ourselves with isValid() checks so that the
+        // subsequent /entity clean nuke has fewer targets and is less likely to
+        // crash on the engine's parallel flock-membership race condition.
         if (world != null) {
             world.execute(() -> {
+                // Phase 1: remove mobs we're tracking (safe, per-entity try/catch)
+                int preRemoved = enemyManager.removeTrackedMobs();
+                // Phase 2: cancel stagger futures, clear maps, /entity clean for
+                // any untracked orphans (e.g. survived a server restart)
+                enemyManager.cleanAllEntities();
+                logger.accept("Mob cleanup: pre-removed " + preRemoved + " tracked mobs");
+
+                // Re-register spawn groups for the NEW floor (cleanAllEntities
+                // cleared the old registration).
+                enemyManager.registerFloor(playerId, playerRef, world, floor.getSpawnGroups());
+
                 // Place blocks in world (currently disabled)
                 // placer.placeFloor(floor, world);
-
-                //placeTrigger
-                
 
                 // Teleport player to spawn point
                 if (playerRef != null) {
@@ -209,6 +206,9 @@ public final class FloorGenerator {
                 }
             });
         } else {
+            // Data-only path (testing) — no world thread, just clear tracking.
+            enemyManager.cleanAllEntities();
+            enemyManager.registerFloor(playerId, playerRef, world, floor.getSpawnGroups());
             if (onReady != null) {
                 onReady.run();
             }

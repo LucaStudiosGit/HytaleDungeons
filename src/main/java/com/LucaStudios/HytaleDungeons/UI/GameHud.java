@@ -12,6 +12,8 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.inventory.ItemStack;
+import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -77,6 +79,11 @@ public final class GameHud {
      */
     private final ConcurrentHashMap<UUID, int[]> hpCache = new ConcurrentHashMap<>();
 
+    /** Cached arrow count per player, updated on the world thread. */
+    private final ConcurrentHashMap<UUID, Integer> arrowCache = new ConcurrentHashMap<>();
+
+    private static final String ARROW_ITEM_ID = "Weapon_Arrow_Crude";
+
     public GameHud(JavaPlugin plugin,
                    HealthManager healthManager,
                    PlayerDataManager playerDataManager,
@@ -116,9 +123,10 @@ public final class GameHud {
         // instead of restoring defaults.
         player.getHudManager().setVisibleHudComponents(playerRef);
 
-        // Seed the HP cache now while we're on the world thread so the very
+        // Seed caches now while we're on the world thread so the very
         // first HUD refresh already shows real values instead of 0 / 0.
         updateHpCache(playerId);
+        updateArrowCache(playerId, player);
 
         HyUIHud hud = HudBuilder.hudForPlayer(playerRef)
                 .fromHtml(HUD_HTML)
@@ -140,10 +148,16 @@ public final class GameHud {
         world.execute(() -> {
             if (!playerRef.isValid()) {
                 hpCache.remove(playerId);
+                arrowCache.remove(playerId);
                 activeHuds.remove(playerId);
                 return;
             }
+            Ref<EntityStore> entityRef = playerRef.getReference();
+            if (entityRef == null || !entityRef.isValid()) return;
+            Store<EntityStore> store = entityRef.getStore();
+            Player player = store.getComponent(entityRef, Player.getComponentType());
             updateHpCache(playerId);
+            if (player != null) updateArrowCache(playerId, player);
         });
     }
 
@@ -164,13 +178,38 @@ public final class GameHud {
         RunData runData = runStateManager.getRunData(playerId);
         int lives = runData == null ? 0 : runData.getLivesRemaining();
 
+        Integer arrows = arrowCache.get(playerId);
+        int arrowCount = arrows == null ? 0 : arrows;
+
         return new HudModel(
                 curHp,
                 maxHp,
                 potionCd,
-                HudModel.PLACEHOLDER_ARROW_COUNT,
+                arrowCount,
                 level,
                 lives);
+    }
+
+    /** World-thread arrow count. Scans hotbar + storage + backpack. */
+    private void updateArrowCache(UUID playerId, Player player) {
+        var inventory = player.getInventory();
+        if (inventory == null) { arrowCache.put(playerId, 0); return; }
+        int count = countItemIn(inventory.getHotbar())
+                  + countItemIn(inventory.getStorage())
+                  + countItemIn(inventory.getBackpack());
+        arrowCache.put(playerId, count);
+    }
+
+    private static int countItemIn(ItemContainer container) {
+        if (container == null) return 0;
+        int total = 0;
+        for (short slot = 0; slot < container.getCapacity(); slot++) {
+            ItemStack item = container.getItemStack(slot);
+            if (item != null && !item.isEmpty() && ARROW_ITEM_ID.equals(item.getItemId())) {
+                total += item.getQuantity();
+            }
+        }
+        return total;
     }
 
     /** World-thread HP read. Safe to touch ECS here. */
@@ -229,53 +268,32 @@ public final class GameHud {
     private static final String HUD_HTML = """
             <style>
               .hud_bar {
-                layout-mode: center;
+                layout-mode: left;
                 horizontal-align: center;
                 vertical-align: bottom;
-                anchor-width: 420;
-                anchor-height: 84;
+                anchor-width: 600;
+                anchor-height: 130;
                 margin-bottom: 6;
-                background-image: HUD/Images/HudBackground.png;
               }
               .hud_slot {
-                layout-mode: left;
-                anchor-width: 164;
-                anchor-height: 84;
+                layout-mode: middle;
+                anchor-width: 200;
+                anchor-height: 130;
               }
               .hud_icon {
                 anchor-width: 96;
                 anchor-height: 96;
+                horizontal-align: center;
                 vertical-align: center;
-                margin-left: 12;
-                margin-right: 6;
               }
               .hud_heart {
                 anchor-width: 144;
                 anchor-height: 124;
+                horizontal-align: center;
                 vertical-align: center;
-                margin-left: 12;
-                margin-right: 6;
-                margin-bottom: 5;
                 layout-mode: middle;
                 background-image: HUD/Images/HeartIcon.png;
               }
-              .hud_arrows {
-                anchor-width: 86;
-                anchor-height: 124;
-                vertical-align: center;
-                margin-left: 12;
-                margin-right: 6;
-                margin-bottom: 5;
-              }
-              .hud_potion {
-                anchor-width: 80;
-                anchor-height: 124;
-                vertical-align: center;
-                margin-left: 12;
-                margin-right: 6;
-                margin-bottom: 5;
-              }
-
               .hud_heart_fill {
                 anchor-width: 119;
                 anchor-height: 93;
@@ -284,21 +302,28 @@ public final class GameHud {
                 margin-left: 13;
                 margin-bottom: 5;
               }
-              .hud_label {
-                anchor-width: 96;
-                anchor-height: 32;
-                vertical-align: center;
-                font-size: 22;
+              .hud_potion_label {
+                anchor-width: 40;
+                anchor-height: 28;
+                horizontal-align: center;
+                vertical-align: bottom;
+                font-size: 20;
+                text-align: center;
+              }
+              .hud_arrow_label {
+                anchor-width: 40;
+                anchor-height: 28;
+                horizontal-align: right;
+                vertical-align: bottom;
+                font-size: 18;
                 text-align: center;
               }
             </style>
             <div class="page-overlay">
                 <div id="hud_bar" class="hud_bar">
                     <div class="hud_slot">
-                        <div class="hud_potion">
-                            <img src="HUD/Images/PotionIcon.png" class="hud_icon"/>
-                            <label id="hud_potion" class="hud_label">READY</label>
-                        </div>
+                        <img src="HUD/Images/PotionIcon.png" class="hud_icon"/>
+                        <label id="hud_potion" class="hud_potion_label">4</label>
                     </div>
                     <div class="hud_slot">
                         <div class="hud_heart">
@@ -306,10 +331,8 @@ public final class GameHud {
                         </div>
                     </div>
                     <div class="hud_slot">
-                        <div class="hud_arrows">
-                            <img src="HUD/Images/ArrowsIcon.png" class="hud_icon"/>
-                            <label id="hud_arrows" class="hud_label">30</label>
-                        </div>
+                        <img src="HUD/Images/ArrowsIcon.png" class="hud_icon"/>
+                        <label id="hud_arrows" class="hud_arrow_label">30</label>
                     </div>
                 </div>
             </div>

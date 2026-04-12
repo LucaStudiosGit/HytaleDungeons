@@ -45,6 +45,7 @@ public final class RunStateManager {
     // --- Default Loadout (from GDD) ---
     private static final String DEFAULT_WEAPON = "Weapon_Sword_Iron";
     private static final String DEFAULT_CROSSBOW = "Weapon_Crossbow_Iron";
+    private static final String DEFAULT_ARROW = "Weapon_Arrow_Crude";
 
     private final JavaPlugin plugin;
     private final ConcurrentHashMap<UUID, RunData> runs = new ConcurrentHashMap<>();
@@ -507,10 +508,21 @@ public final class RunStateManager {
                 return;
             }
 
-            var hotbar = player.getInventory().getHotbar();
+            var inventory = player.getInventory();
+            inventory.getHotbar().clear();
+            inventory.getStorage().clear();
+            if (inventory.getBackpack() != null) {
+                inventory.getBackpack().clear();
+            }
+
+            var hotbar = inventory.getHotbar();
             hotbar.setItemStackForSlot((short) 0, new ItemStack(DEFAULT_WEAPON, 1));
             hotbar.setItemStackForSlot((short) 1, new ItemStack(DEFAULT_CROSSBOW, 1));
             // Slot 2 (armor) intentionally left empty — no default armor per GDD
+
+            // Give 30 arrows in storage (not hotbar — hotbar is locked to slot 0)
+            inventory.getStorage()
+                    .setItemStackForSlot((short) 0, new ItemStack(DEFAULT_ARROW, 30));
         });
     }
 

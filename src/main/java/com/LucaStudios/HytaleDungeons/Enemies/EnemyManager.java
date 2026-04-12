@@ -72,6 +72,13 @@ public final class EnemyManager {
     private final Map<UUID, List<ScheduledFuture<?>>> pendingByPlayer = new ConcurrentHashMap<>();
     /** Per-player floor registration (group lookup + live counts + spawn context). */
     private final Map<UUID, FloorRegistration> floors = new ConcurrentHashMap<>();
+    /**
+     * Per-player generation counter. Bumped on every {@link #cleanAllEntities()}
+     * and {@link #despawnAll}. Stagger-scheduled spawns capture the generation at
+     * schedule time and skip the spawn if it's stale — prevents orphan mobs when
+     * a floor regen fires while stagger spawns are still in-flight.
+     */
+    private final ConcurrentHashMap<UUID, Integer> generationByPlayer = new ConcurrentHashMap<>();
 
     /**
      * Test seam for the chain-spawn dispatch. Invoked whenever a group's live count
@@ -147,6 +154,7 @@ public final class EnemyManager {
 
         final UUID playerId = playerRef.getUuid();
         final String groupId = group.id();
+        final int generation = generationByPlayer.getOrDefault(playerId, 0);
         List<ScheduledFuture<?>> pending = pendingByPlayer.computeIfAbsent(playerId, k -> new ArrayList<>());
         int requested = group.totalMobCount();
         int index = 0;
@@ -170,6 +178,9 @@ public final class EnemyManager {
 
                 ScheduledFuture<?> future = staggerScheduler.schedule(() -> world.execute(() -> {
                     if (!playerRef.isValid() || !entityRef.isValid()) return;
+                    // Generation changed — a cleanup ran after this spawn was scheduled.
+                    int curGen = generationByPlayer.getOrDefault(playerId, 0);
+                    if (curGen != generation) return;
                     try {
                         Pair<Ref<EntityStore>, ?> spawned =
                                 NPCPlugin.get().spawnNPC(store, arch.entityID, null, position, rotation);
@@ -217,11 +228,45 @@ public final class EnemyManager {
     }
 
     /**
-     * Remove every entity in the world by running Hytale's built-in
-     * {@code /entity clean --confirm} command as the console. Catches mobs our
-     * per-player tracking doesn't know about (e.g. survived server restart).
+     * Pre-remove all tracked mobs with per-entity {@code isValid()} checks so
+     * that the subsequent {@code /entity clean} nuke has fewer targets and is
+     * less likely to crash on the parallel flock-membership race. Must be
+     * called from the <strong>world thread</strong>.
+     *
+     * @return number of entities successfully removed
+     */
+    public int removeTrackedMobs() {
+        int removed = 0;
+        for (Map.Entry<Ref<EntityStore>, EnemyState> e : states.entrySet()) {
+            Ref<EntityStore> ref = e.getKey();
+            if (ref == null || !ref.isValid()) continue;
+            try {
+                Store<EntityStore> s = ref.getStore();
+                if (s != null) {
+                    s.removeEntity(ref, RemoveReason.REMOVE);
+                    removed++;
+                }
+            } catch (Throwable t) {
+                // Entity already dead/removed by the native pipeline — safe to ignore.
+            }
+        }
+        return removed;
+    }
+
+    /**
+     * Cancel pending stagger spawns, clear tracking maps, and run Hytale's
+     * {@code /entity clean --confirm} as a fallback nuke for mobs our tracking
+     * doesn't know about (e.g. survived a server restart). Call
+     * {@link #removeTrackedMobs()} on the world thread <em>before</em> this
+     * method to avoid the parallel-removal race in the engine's clean command.
      */
     public void cleanAllEntities() {
+        // Bump generation for every known player so in-flight stagger spawns
+        // see the mismatch and skip.
+        for (UUID pid : generationByPlayer.keySet()) {
+            generationByPlayer.merge(pid, 1, Integer::sum);
+        }
+
         int cancelled = 0;
         for (List<ScheduledFuture<?>> list : pendingByPlayer.values()) {
             for (ScheduledFuture<?> f : list) {
@@ -248,6 +293,8 @@ public final class EnemyManager {
      */
     public void despawnAll(UUID playerId, World world) {
         if (playerId == null) return;
+
+        generationByPlayer.merge(playerId, 1, Integer::sum);
 
         List<ScheduledFuture<?>> pending = pendingByPlayer.remove(playerId);
         int cancelled = 0;

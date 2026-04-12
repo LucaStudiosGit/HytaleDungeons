@@ -94,7 +94,9 @@ public final class RightClickCrossbowHandler {
         ItemDefinition crossbow = ItemDatabase.getInstance().getByHytaleId(LOADED_CROSSBOW_ITEM_ID);
         if (!combatManager.canRangedAttack(playerId, crossbow)) return;
 
-        Vector3d aimTarget = resolveAimTarget(targetEntity, targetBlock);
+        var playerPos = playerRef.getTransform().getPosition();
+        double shooterEyeY = playerPos.y + 1.5;
+        Vector3d aimTarget = resolveAimTarget(targetEntity, targetBlock, shooterEyeY);
         if (aimTarget == null) return;
 
         Player player = store.getComponent(entityRef, Player.getComponentType());
@@ -125,13 +127,21 @@ public final class RightClickCrossbowHandler {
         scheduleRestore(playerRef);
     }
 
-    private Vector3d resolveAimTarget(Entity targetEntity, Vector3i targetBlock) {
+    /** Center-mass offset for entity targeting (roughly chest height). */
+    private static final double AIM_CENTER_MASS_Y = 1.0;
+
+    private Vector3d resolveAimTarget(Entity targetEntity, Vector3i targetBlock,
+                                      double shooterEyeY) {
         if (targetEntity != null && targetEntity.getTransformComponent() != null) {
-            return targetEntity.getTransformComponent().getTransform().getPosition();
+            Vector3d pos = targetEntity.getTransformComponent().getTransform().getPosition();
+            // Aim at center mass, not feet
+            return new Vector3d(pos.x, pos.y + AIM_CENTER_MASS_Y, pos.z);
         }
 
         if (targetBlock != null) {
-            return new Vector3d(targetBlock.x + 0.5, targetBlock.y + 0.5, targetBlock.z + 0.5);
+            // Block target is usually the floor — shoot horizontally at eye
+            // height so arrows don't dive into the ground.
+            return new Vector3d(targetBlock.x + 0.5, shooterEyeY, targetBlock.z + 0.5);
         }
 
         return null;

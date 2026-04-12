@@ -3645,3 +3645,316 @@ src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
 src/main/resources/Common/UI/Custom/HUD/Images/HeartIcon.png
 ---
 
+## Session End: 20260411_220743
+### Commits
+e9e91e6 Add persistent game HUD and assets
+d18fb53 Enable fullbright for players (DynamicLight)
+07de479 Merge branch 'main' of https://github.com/LucaStudiosGit/HytaleDungeons
+6c2bcaa Update default world chunks and time
+744c917 Ignore/clean Gradle and buildSrc artifacts
+83063dc Add main menu UI and tests
+7e96af6 Update region chunks and reset spawn suppressors
+9aa0a33 Add damage interceptor and death observers
+### Uncommitted Changes
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+---
+
+## Session End: 20260412_205719
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/config.json
+run/universe/worlds/default/config.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_205752
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/config.json
+run/universe/worlds/default/config.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_210318
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/config.json
+run/universe/worlds/default/config.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_210738
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/config.json
+run/universe/worlds/default/config.json.bak
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_212015
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_212701
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_213216
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_214114
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_214640
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/RightClickCrossbowHandler.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_215149
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/RightClickCrossbowHandler.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_215643
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/RightClickCrossbowHandler.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_215925
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/RightClickCrossbowHandler.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_220201
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/RightClickCrossbowHandler.java
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_221153
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/RightClickCrossbowHandler.java
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+
+## Session End: 20260412_221639
+### Commits
+3a494af Update floor names, spawn points and zones
+### Uncommitted Changes
+production/session-logs/agent-audit.log
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/RightClickCrossbowHandler.java
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameHud.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
+src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
+---
+

@@ -28,8 +28,9 @@ import java.util.function.Consumer;
 public final class HealthManager {
 
     // --- Tuning Knobs (from GDD) ---
-    public static final int POTION_HEAL_AMOUNT = 50;
-    public static final long POTION_COOLDOWN_MS = 8000L;
+    /** Potion heals 80% of the player's current max HP. */
+    public static final float POTION_HEAL_RATIO = 0.80f;
+    public static final long POTION_COOLDOWN_MS = 30_000L;
 
     private final RunStateManager runStateManager;
     private final ConcurrentHashMap<UUID, PlayerHpState> states = new ConcurrentHashMap<>();
@@ -77,9 +78,9 @@ public final class HealthManager {
     }
 
     /**
-     * Use a health potion. Reads the player's current native HP, adds
-     * {@link #POTION_HEAL_AMOUNT} (clamped to max), writes it back, and starts
-     * the cooldown. Must be called from the world thread.
+     * Use a health potion. Heals {@link #POTION_HEAL_RATIO} of the player's
+     * max HP (clamped to max), writes it back, and starts the cooldown.
+     * Must be called from the world thread.
      *
      * @return HP actually healed, or -1 if potion use was blocked (wrong state
      *         or on cooldown).
@@ -107,7 +108,8 @@ public final class HealthManager {
         float before = hp.get();
         float max = hp.getMax();
         if (before <= 0f) return -1; // dead players can't chug
-        float after = Math.min(max, before + POTION_HEAL_AMOUNT);
+        float healAmount = max * POTION_HEAL_RATIO;
+        float after = Math.min(max, before + healAmount);
         statMap.setStatValue(DefaultEntityStatTypes.getHealth(), after);
         state.potionCooldownEndMs = System.currentTimeMillis() + POTION_COOLDOWN_MS;
 

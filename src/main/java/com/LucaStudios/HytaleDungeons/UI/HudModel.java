@@ -18,11 +18,11 @@ public record HudModel(
     /** Placeholder for arrows until ammo tracking exists. */
     public static final int PLACEHOLDER_ARROW_COUNT = 30;
 
-    /** "READY" if off-cooldown, else "Xs" whole-seconds remaining (ceil). */
+    /** "4" (keybind hint) if off-cooldown, else whole-seconds countdown (ceil). */
     public String formatPotion() {
-        if (potionCooldownRemainingMs <= 0L) return "READY";
+        if (potionCooldownRemainingMs <= 0L) return "4";
         long seconds = (potionCooldownRemainingMs + 999L) / 1000L;
-        return seconds + "s";
+        return String.valueOf(seconds);
     }
 
     public String formatArrows() {

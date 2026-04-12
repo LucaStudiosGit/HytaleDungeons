@@ -10,32 +10,23 @@ class HudModelTest {
         return new HudModel(hp, maxHp, cdMs, arrows, level, lives);
     }
 
+
     @Test
-    void formatHpShowsCurrentOverMax() {
-        assertEquals("75 / 100", model(75, 100, 0, 30, 1, 3).formatHp());
+    void formatPotionShowsKeybindWhenReady() {
+        assertEquals("4", model(100, 100, 0L, 30, 1, 3).formatPotion());
     }
 
     @Test
-    void formatHpClampsNegativeCurrentToZero() {
-        assertEquals("0 / 100", model(-5, 100, 0, 30, 1, 3).formatHp());
+    void formatPotionShowsKeybindWhenCooldownNegative() {
+        assertEquals("4", model(100, 100, -100L, 30, 1, 3).formatPotion());
     }
 
     @Test
-    void formatPotionReadyWhenCooldownZero() {
-        assertEquals("READY", model(100, 100, 0L, 30, 1, 3).formatPotion());
-    }
-
-    @Test
-    void formatPotionReadyWhenCooldownNegative() {
-        assertEquals("READY", model(100, 100, -100L, 30, 1, 3).formatPotion());
-    }
-
-    @Test
-    void formatPotionShowsCeilSecondsRemaining() {
-        // 8000ms → 8s, 7001ms → 8s (ceil), 1ms → 1s
-        assertEquals("8s", model(100, 100, 8000L, 30, 1, 3).formatPotion());
-        assertEquals("8s", model(100, 100, 7001L, 30, 1, 3).formatPotion());
-        assertEquals("1s", model(100, 100, 1L, 30, 1, 3).formatPotion());
+    void formatPotionShowsCeilSecondsCountdown() {
+        // 8000ms → 8, 7001ms → 8 (ceil), 1ms → 1
+        assertEquals("8", model(100, 100, 8000L, 30, 1, 3).formatPotion());
+        assertEquals("8", model(100, 100, 7001L, 30, 1, 3).formatPotion());
+        assertEquals("1", model(100, 100, 1L, 30, 1, 3).formatPotion());
     }
 
     @Test

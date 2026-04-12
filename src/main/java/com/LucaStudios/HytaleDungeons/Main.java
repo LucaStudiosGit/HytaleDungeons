@@ -130,6 +130,10 @@ public class Main extends JavaPlugin {
         // Melee cooldown enforcement — blocks left-click during weapon cooldown
         new MeleeCooldownHandler(combatManager).register(this);
 
+        // Potion key watcher — must register BEFORE hotbar lock so the
+        // watcher sees slot-4 presses before the lock filter consumes them.
+        new com.LucaStudios.HytaleDungeons.Health.PotionKeyHandler(healthManager).register();
+
         new PlayerRestrictions(this).register();
 
         // Epic A — main menu modal page on join
