@@ -33,11 +33,19 @@ public final class NoJumpRestriction {
             var settings = movementManager.getSettings();
             settings.jumpForce = 0.0f;
             settings.swimJumpForce = 0.0f;
+            settings.jumpBufferDuration = 0.0f;
+            settings.jumpBufferMaxYVelocity = 0.0f;
+            settings.variableJumpFallForce = 0.0f;
+            settings.fallJumpForce = 0.0f;
 
             var defaultSettings = movementManager.getDefaultSettings();
             if (defaultSettings != null) {
                 defaultSettings.jumpForce = 0.0f;
                 defaultSettings.swimJumpForce = 0.0f;
+                defaultSettings.jumpBufferDuration = 0.0f;
+                defaultSettings.jumpBufferMaxYVelocity = 0.0f;
+                defaultSettings.variableJumpFallForce = 0.0f;
+                defaultSettings.fallJumpForce = 0.0f;
             }
 
             movementManager.update(playerRef.getPacketHandler());

@@ -3,6 +3,7 @@ package com.LucaStudios.HytaleDungeons.UI;
 import au.ellie.hyui.builders.HyUIPage;
 import au.ellie.hyui.builders.PageBuilder;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
@@ -76,6 +77,7 @@ public final class MainMenuPage {
 
         PageBuilder builder = PageBuilder.pageForPlayer(playerRef)
                 .fromHtml(MAIN_MENU_HTML)
+                .withLifetime(CustomPageLifetime.CantClose)
                 .addEventListener(BTN_START, CustomUIEventBindingType.Activating,
                         v -> handleStart(wrap(pageSlot[0])))
                 .addEventListener(BTN_DISCORD, CustomUIEventBindingType.Activating,
@@ -124,17 +126,91 @@ public final class MainMenuPage {
     }
 
     private static final String MAIN_MENU_HTML = """
+            <style>
+              .menu_bg {
+                anchor-width: 1955;
+                anchor-height: 1080;
+                background-image: HUD/Images/MainMenuBG.png;
+                layout-mode: top;
+                horizontal-align: center;
+                vertical-align: center;
+              }
+              .menu_title_area {
+                layout-mode: top;
+                anchor-width: 1955;
+                anchor-height: 120;
+                horizontal-align: center;
+                margin-top: 80;
+              }
+              .menu_v_spacer {
+                flex-weight: 1;
+              }
+              .menu_bottom_row {
+                layout-mode: left;
+                layout-align: middlecenter;
+                anchor-width: 1955;
+                anchor-height: 70;
+                margin-bottom: 10;
+              }
+              .menu_h_spacer {
+                flex-weight: 1;
+              }
+              .menu_btn_gap {
+                anchor-width: 10;
+                anchor-height: 64;
+              }
+              .menu_margin {
+                anchor-width: 60;
+                anchor-height: 64;
+              }
+              .btn_start {
+                anchor-width: 340;
+                anchor-height: 64;
+              }
+              .btn_dark {
+                anchor-width: 200;
+                anchor-height: 52;
+              }
+            </style>
             <div class="page-overlay">
-                <div class="panel">
-                    <div class="group" style="layout-mode: top; horizontal-align: center; vertical-align: middle; anchor-width: 420; anchor-height: 360;">
+                <div class="menu_bg">
+                    <div class="menu_title_area">
                         <label style="text-align: center; font-size: 36;">HYTALE DUNGEONS</label>
                         <label style="text-align: center; font-size: 14;">Descend. Survive. Ascend.</label>
-                        <div class="group" style="anchor-height: 20;"></div>
-                        <button id="btn_start" style="anchor-width: 320; anchor-height: 48;">Start</button>
-                        <div class="group" style="anchor-height: 12;"></div>
-                        <button id="btn_discord" style="anchor-width: 320; anchor-height: 48;">Discord</button>
-                        <div class="group" style="anchor-height: 12;"></div>
-                        <button id="btn_quit" style="anchor-width: 320; anchor-height: 48;">Quit</button>
+                    </div>
+                    <div class="menu_v_spacer"></div>
+                    <div class="menu_bottom_row">
+                        <div class="menu_margin"></div>
+                        <button id="btn_start" class="custom-textbutton btn_start"
+                            data-hyui-default-bg="background-image: HUD/Images/BtnGreen.png;"
+                            data-hyui-hovered-bg="background-image: HUD/Images/BtnGreenHov.png;"
+                            data-hyui-pressed-bg="background-image: HUD/Images/BtnGreenPrs.png;"
+                            data-hyui-default-label-style="color: #ffffff; font-size: 20; font-weight: bold; font-family: secondary; text-transform: uppercase; text-align: center; vertical-align: center;"
+                            data-hyui-hovered-label-style="color: #ffffff; font-size: 20; font-weight: bold; font-family: secondary; text-transform: uppercase; text-align: center; vertical-align: center;"
+                            data-hyui-pressed-label-style="color: #ddffdd; font-size: 19; font-weight: bold; font-family: secondary; text-transform: uppercase; text-align: center; vertical-align: center;">
+                            <label>START GAME</label>
+                        </button>
+                        <div class="menu_h_spacer"></div>
+                        <button id="btn_discord" class="custom-textbutton btn_dark"
+                            data-hyui-default-bg="background-image: HUD/Images/BtnDark.png;"
+                            data-hyui-hovered-bg="background-image: HUD/Images/BtnDarkHov.png;"
+                            data-hyui-pressed-bg="background-image: HUD/Images/BtnDarkPrs.png;"
+                            data-hyui-default-label-style="color: #cccccc; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
+                            data-hyui-hovered-label-style="color: #ffffff; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
+                            data-hyui-pressed-label-style="color: #aaaaaa; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;">
+                            <label>Discord</label>
+                        </button>
+                        <div class="menu_btn_gap"></div>
+                        <button id="btn_quit" class="custom-textbutton btn_dark"
+                            data-hyui-default-bg="background-image: HUD/Images/BtnDark.png;"
+                            data-hyui-hovered-bg="background-image: HUD/Images/BtnDarkHov.png;"
+                            data-hyui-pressed-bg="background-image: HUD/Images/BtnDarkPrs.png;"
+                            data-hyui-default-label-style="color: #cccccc; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
+                            data-hyui-hovered-label-style="color: #ffffff; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
+                            data-hyui-pressed-label-style="color: #aaaaaa; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
+                            <label>Exit</label>
+                        </button>
+                        <div class="menu_margin"></div>
                     </div>
                 </div>
             </div>

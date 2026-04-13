@@ -5,9 +5,9 @@ package com.LucaStudios.HytaleDungeons.Enemies;
  * Each archetype has a base HP, base ATK, and a weight in the spawn roll.
  */
 public enum Archetype {
-    MELEE(20, 10, 0.60, "Goblin_Hermit"),
-    RANGED(12, 14, 0.30, "Skeleton_Burnt_Archer"),
-    RUSHER(20, 40, 0.10, "Goblin_Hermit");
+    MELEE (20, 10, 0.65, "Goblin_Hermit"),
+    RANGED(10, 10, 0.25, "Skeleton_Burnt_Archer"),
+    RUSHER(10, 40, 0.10, "Goblin_Hermit");
 
     public final int baseHp;
     public final int baseAtk;

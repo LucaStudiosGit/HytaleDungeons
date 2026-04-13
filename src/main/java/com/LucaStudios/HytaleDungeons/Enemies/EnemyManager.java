@@ -45,8 +45,8 @@ public final class EnemyManager {
 
 //    public static final String NPC_ROLE = "Goblin_Hermit";
 
-    public static final double HP_VARIANCE = 0.30;
-    public static final double ATK_VARIANCE = 0.25;
+    public static final double HP_VARIANCE = 0.15;
+    public static final double ATK_VARIANCE = 0.10;
 
     /** Delay between consecutive mob spawns within a group, in milliseconds. */
     public static final long SPAWN_STAGGER_MS = 150L;
