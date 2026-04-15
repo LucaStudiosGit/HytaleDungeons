@@ -69,6 +69,11 @@ public final class MainMenuPage {
         });
     }
 
+    /** Reopen the menu on demand (e.g. "Back to Lobby" from the game-over screen). */
+    public HyUIPage showFor(PlayerRef playerRef, Store<EntityStore> store) {
+        return openFor(playerRef, store);
+    }
+
     private HyUIPage openFor(PlayerRef playerRef, Store<EntityStore> store) {
         // pageSlot holds the opened page so the Start handler can close it.
         // Lambdas capture the array, then read pageSlot[0] at click-time (after open() has run).
@@ -128,12 +133,12 @@ public final class MainMenuPage {
     private static final String MAIN_MENU_HTML = """
             <style>
               .menu_bg {
-                anchor-width: 1955;
-                anchor-height: 1080;
+                anchor-top: 0;
+                anchor-bottom: 0;
+                anchor-left: 0;
+                anchor-right: 0;
                 background-image: HUD/Images/MainMenuBG.png;
                 layout-mode: top;
-                horizontal-align: center;
-                vertical-align: center;
               }
               .menu_title_area {
                 layout-mode: top;

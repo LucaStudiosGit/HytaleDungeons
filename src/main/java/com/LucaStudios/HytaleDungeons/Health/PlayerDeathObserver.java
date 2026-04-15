@@ -46,6 +46,10 @@ public final class PlayerDeathObserver extends DeathSystems.OnDeathSystem {
         Player player = store.getComponent(ref, Player.getComponentType());
         if (player == null) return;
 
+        // Suppress Hytale's native death menu — our RunStateManager drives
+        // the respawn flow and (eventually) our own death UI.
+        component.setShowDeathMenu(false);
+
         @SuppressWarnings("removal")
         PlayerRef playerRef = player.getPlayerRef();
         if (playerRef == null || !playerRef.isValid()) return;

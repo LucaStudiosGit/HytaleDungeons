@@ -61,6 +61,18 @@ public final class RunStateManager {
     private HealthManager healthManager;
     private PlayerDataManager playerDataManager;
     private FloorGenerator floorGenerator;
+    private com.LucaStudios.HytaleDungeons.UI.DeathPage deathPage;
+    private com.LucaStudios.HytaleDungeons.UI.GameOverPage gameOverPage;
+
+    /** Optional: modal death page shown during the death-screen duration. */
+    public void setDeathPage(com.LucaStudios.HytaleDungeons.UI.DeathPage deathPage) {
+        this.deathPage = deathPage;
+    }
+
+    /** Optional: modal game-over page shown when the player runs out of lives. */
+    public void setGameOverPage(com.LucaStudios.HytaleDungeons.UI.GameOverPage gameOverPage) {
+        this.gameOverPage = gameOverPage;
+    }
 
     public RunStateManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -136,6 +148,28 @@ public final class RunStateManager {
         fireStateChange(playerId, oldState, RunState.DEAD, data);
 
         log("Player %s died on floor %d (%d lives left)", playerId, data.getCurrentFloor(), data.getLivesRemaining());
+
+        // Final death — skip the death screen and resolve straight to game over
+        // (resolveDeathScreen opens the GameOverPage on the no-lives branch).
+        if (data.getLivesRemaining() <= 0) {
+            resolveDeathScreen(playerId, playerRef);
+            return;
+        }
+
+        // Show our custom death page (native one suppressed in PlayerDeathObserver).
+        if (deathPage != null && playerRef != null && playerRef.isValid()) {
+            Ref<EntityStore> entityRef = playerRef.getReference();
+            if (entityRef != null && entityRef.isValid()) {
+                Store<EntityStore> store = entityRef.getStore();
+                try {
+                    deathPage.showFor(playerRef, store, DEATH_SCREEN_DURATION_MS,
+                            Math.max(0, data.getLivesRemaining() - 1));
+                } catch (Throwable t) {
+                    plugin.getLogger().at(Level.WARNING).log(
+                            "DeathPage.showFor failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+                }
+            }
+        }
 
         // After death screen duration, resolve: respawn or game over
         scheduler.schedule(() -> resolveDeathScreen(playerId, playerRef), DEATH_SCREEN_DURATION_MS, TimeUnit.MILLISECONDS);
@@ -363,6 +397,16 @@ public final class RunStateManager {
                         data.setMobsRemaining(floor.getMobSpawnCount());
                     }
                 });
+                // Hytale's native spawn-point logic can fire after our initial
+                // teleport on fresh join / server restart and land the player at
+                // the world spawn. Re-teleport after a short delay so we win.
+                scheduler.schedule(() -> {
+                    if (!playerRef.isValid()) return;
+                    world.execute(() -> {
+                        if (!playerRef.isValid()) return;
+                        floorGenerator.teleportToActiveFloorSpawn(playerId, playerRef);
+                    });
+                }, 750L, TimeUnit.MILLISECONDS);
             }
         });
     }
@@ -413,7 +457,22 @@ public final class RunStateManager {
 
             log("Player %s game over on floor %d", playerId, data.getCurrentFloor());
 
-            // TODO: Show game over UI with score screen
+            if (gameOverPage != null && playerRef != null && playerRef.isValid()) {
+                Ref<EntityStore> entityRef = playerRef.getReference();
+                if (entityRef != null && entityRef.isValid()) {
+                    Store<EntityStore> store = entityRef.getStore();
+                    World world = entityRef.getStore().getExternalData().getWorld();
+                    final com.LucaStudios.HytaleDungeons.UI.GameOverPage pageRef = gameOverPage;
+                    world.execute(() -> {
+                        try {
+                            pageRef.showFor(playerRef, store);
+                        } catch (Throwable t) {
+                            plugin.getLogger().at(Level.WARNING).log(
+                                    "GameOverPage.showFor failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+                        }
+                    });
+                }
+            }
         }
     }
 

@@ -3958,3 +3958,124 @@ src/main/java/com/LucaStudios/HytaleDungeons/UI/HudModel.java
 src/test/java/com/LucaStudios/HytaleDungeons/UI/HudModelTest.java
 ---
 
+## Session End: 20260414_183707
+### Uncommitted Changes
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+---
+
+## Session End: 20260414_190812
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+---
+
+## Session End: 20260414_191409
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+---
+
+## Session End: 20260414_192341
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+---
+
+## Session End: 20260414_192644
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+---
+
+## Session End: 20260414_192731
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260414_193737
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260414_200913
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260414_203145
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+

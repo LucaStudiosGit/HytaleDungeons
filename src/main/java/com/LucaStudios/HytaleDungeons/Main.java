@@ -98,6 +98,12 @@ public class Main extends JavaPlugin {
         runStateManager.setHealthManager(healthManager);
         runStateManager.setPlayerDataManager(playerDataManager);
         runStateManager.setFloorGenerator(floorGenerator);
+        runStateManager.setDeathPage(new com.LucaStudios.HytaleDungeons.UI.DeathPage());
+        // GameOverPage needs MainMenuPage to implement the "Lobby" button —
+        // construct the menu up front here and register it below.
+        MainMenuPage mainMenuPage = new MainMenuPage(this);
+        runStateManager.setGameOverPage(
+                new com.LucaStudios.HytaleDungeons.UI.GameOverPage(runStateManager, mainMenuPage));
         // Combat system — cooldowns, damage calculation
         combatManager = new CombatManager(runStateManager,
                 msg -> getLogger().at(Level.INFO).log(msg));
@@ -137,7 +143,7 @@ public class Main extends JavaPlugin {
         new PlayerRestrictions(this).register();
 
         // Epic A — main menu modal page on join
-        new MainMenuPage(this).register();
+        mainMenuPage.register();
 
         // Epic B — persistent game HUD covering native bottom bar
         new GameHud(this, healthManager, playerDataManager, runStateManager).register();
