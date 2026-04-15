@@ -11,7 +11,6 @@ import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
@@ -95,18 +94,23 @@ public final class GameHud {
     }
 
     public void register() {
-        plugin.getEventRegistry().registerGlobal(PlayerReadyEvent.class, this::onPlayerReady);
+        // HUD is shown explicitly via show() when the player starts the game,
+        // not on join — it should not appear during the start screen.
     }
 
-    private void onPlayerReady(PlayerReadyEvent event) {
-        Ref<EntityStore> entityRef = event.getPlayerRef();
-        Store<EntityStore> store = entityRef.getStore();
+    /**
+     * Show the HUD for this player. Call this when the player starts the game,
+     * not on join. Safe to call from any thread.
+     */
+    public void show(PlayerRef playerRef) {
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) return;
+        Store<EntityStore> store = ref.getStore();
         World world = store.getExternalData().getWorld();
         world.execute(() -> {
-            if (!entityRef.isValid()) return;
-            Player player = store.getComponent(entityRef, Player.getComponentType());
-            PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
-            if (player == null || playerRef == null) return;
+            if (!ref.isValid()) return;
+            Player player = store.getComponent(ref, Player.getComponentType());
+            if (player == null || !playerRef.isValid()) return;
             showFor(player, playerRef, store, world);
         });
     }

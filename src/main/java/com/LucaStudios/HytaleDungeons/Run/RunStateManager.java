@@ -353,18 +353,29 @@ public final class RunStateManager {
             }
 
             fireStateChange(playerId, null, RunState.FLOOR_ACTIVE, data);
-            log("Player %s joined — starting run on floor %d with %d lives", playerId, STARTING_FLOOR, MAX_LIVES);
-
-            // Generate floor 1 with block placement and teleport
-            if (floorGenerator != null) {
-                floorGenerator.generateFloor(playerId, STARTING_FLOOR, world, playerRef, () -> {
-                    FloorData floor = floorGenerator.getActiveFloor(playerId);
-                    if (floor != null) {
-                        data.setMobsRemaining(floor.getMobSpawnCount());
-                    }
-                });
-            }
+            log("Player %s joined — waiting for Start button before generating floor", playerId);
         });
+    }
+
+    /**
+     * Called when the player clicks "Start Game" on the main menu.
+     * Triggers floor 1 generation, block placement, and the first teleport.
+     * Safe to call from any thread — world dispatch is handled internally.
+     */
+    public void startRun(UUID playerId, PlayerRef playerRef) {
+        RunData data = runs.get(playerId);
+        if (data == null) return;
+        World world = worldFromPlayerRef(playerRef);
+        if (floorGenerator != null && world != null) {
+            floorGenerator.generateFloor(playerId, STARTING_FLOOR, world, playerRef, () -> {
+                FloorData floor = floorGenerator.getActiveFloor(playerId);
+                if (floor != null) {
+                    data.setMobsRemaining(floor.getMobSpawnCount());
+                }
+                TopDownView.enable(playerRef);
+            });
+        }
+        log("Player %s clicked Start — generating floor %d", playerId, STARTING_FLOOR);
     }
 
     private void onPlayerDisconnect(PlayerDisconnectEvent event) {

@@ -1,6 +1,12 @@
 package com.LucaStudios.HytaleDungeons;
 
+import com.LucaStudios.HytaleDungeons.Config.LobbyConfig;
 import com.LucaStudios.HytaleDungeons.Debug.DebugCommands;
+import com.hypixel.hytale.builtin.weather.resources.WeatherResource;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.LucaStudios.HytaleDungeons.Combat.CombatManager;
 import com.LucaStudios.HytaleDungeons.Combat.MeleeCooldownHandler;
 import com.LucaStudios.HytaleDungeons.Combat.RightClickCrossbowHandler;
@@ -66,9 +72,44 @@ public class Main extends JavaPlugin {
 
         ItemDatabase.load(msg -> getLogger().at(Level.INFO).log(msg));
         FloorTemplateLibrary.load(msg -> getLogger().at(Level.INFO).log(msg));
+        LobbyConfig.load(msg -> getLogger().at(Level.INFO).log(msg));
 
         registerEvents();
         registerCommands();
+    }
+
+    @Override
+    protected void start() {
+        applyWeatherLock();
+    }
+
+    private void applyWeatherLock() {
+        String weatherId = LobbyConfig.getInstance().getWeather();
+        if (weatherId == null || weatherId.isEmpty()) return;
+
+        World world = Universe.get().getDefaultWorld();
+        if (world == null) {
+            getLogger().at(Level.WARNING).log("Weather lock: default world not available yet");
+            return;
+        }
+        world.execute(() -> {
+            Store<EntityStore> store = world.getEntityStore().getStore();
+            WeatherResource resource = store.getResource(WeatherResource.getResourceType());
+            if (resource == null) {
+                getLogger().at(Level.WARNING).log("Weather lock: WeatherResource not found on world store");
+                return;
+            }
+            resource.setForcedWeather(weatherId);
+            int resolvedIndex = resource.getForcedWeatherIndex();
+            if (resolvedIndex == 0) {
+                getLogger().at(Level.WARNING).log(
+                        "Weather lock: ID \"" + weatherId + "\" resolved to index 0 — unknown ID? " +
+                        "IDs are case-sensitive (e.g. \"Zone3_Hedera\", not \"ZONE3_HEDERA\").");
+            } else {
+                getLogger().at(Level.INFO).log(
+                        "Weather locked to \"" + weatherId + "\" (index " + resolvedIndex + ")");
+            }
+        });
     }
 
     @Override
@@ -123,6 +164,12 @@ public class Main extends JavaPlugin {
 
         runStateManager.register();
 
+        // Re-apply weather lock on first player join in case start() ran before
+        // the WeatherResource was initialised on the world store.
+        getEventRegistry().registerGlobal(
+                com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent.class,
+                e -> applyWeatherLock());
+
         // Ranged attack handler with cooldown enforcement
         rightClickCrossbowHandler = new RightClickCrossbowHandler(combatManager);
         rightClickCrossbowHandler.register(this);
@@ -136,11 +183,13 @@ public class Main extends JavaPlugin {
 
         new PlayerRestrictions(this).register();
 
-        // Epic A — main menu modal page on join
-        new MainMenuPage(this).register();
-
         // Epic B — persistent game HUD covering native bottom bar
-        new GameHud(this, healthManager, playerDataManager, runStateManager).register();
+        // Constructed first so MainMenuPage can call show() on Start.
+        GameHud gameHud = new GameHud(this, healthManager, playerDataManager, runStateManager);
+        gameHud.register();
+
+        // Epic A — main menu modal page on join
+        new MainMenuPage(this, LobbyConfig.getInstance(), runStateManager, gameHud).register();
 
         // Debug commands — remove before release
         new DebugCommands(runStateManager, floorGenerator).register(this);

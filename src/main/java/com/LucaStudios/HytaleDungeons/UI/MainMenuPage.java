@@ -2,11 +2,17 @@ package com.LucaStudios.HytaleDungeons.UI;
 
 import au.ellie.hyui.builders.HyUIPage;
 import au.ellie.hyui.builders.PageBuilder;
+import com.LucaStudios.HytaleDungeons.Config.LobbyConfig;
+import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -49,9 +55,15 @@ public final class MainMenuPage {
     }
 
     private final JavaPlugin plugin;
+    private final LobbyConfig lobbyConfig;
+    private final RunStateManager runStateManager;
+    private final GameHud gameHud;
 
-    public MainMenuPage(JavaPlugin plugin) {
+    public MainMenuPage(JavaPlugin plugin, LobbyConfig lobbyConfig, RunStateManager runStateManager, GameHud gameHud) {
         this.plugin = plugin;
+        this.lobbyConfig = lobbyConfig;
+        this.runStateManager = runStateManager;
+        this.gameHud = gameHud;
     }
 
     public void register() {
@@ -65,8 +77,23 @@ public final class MainMenuPage {
             if (!entityRef.isValid()) return;
             PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
             if (playerRef == null) return;
+            teleportToLobby(playerRef);
             openFor(playerRef, store);
         });
+    }
+
+    private void teleportToLobby(PlayerRef playerRef) {
+        if (!playerRef.isValid()) return;
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) return;
+        Store<EntityStore> store = ref.getStore();
+
+        LobbyConfig.LobbySpawn spawn = lobbyConfig.getLobbySpawn();
+        Teleport teleport = Teleport.createForPlayer(
+                new Vector3d(spawn.x(), spawn.y(), spawn.z()),
+                new Vector3f(spawn.yaw(), spawn.pitch(), spawn.roll())
+        );
+        store.addComponent(ref, Teleport.getComponentType(), teleport);
     }
 
     private HyUIPage openFor(PlayerRef playerRef, Store<EntityStore> store) {
@@ -79,7 +106,11 @@ public final class MainMenuPage {
                 .fromHtml(MAIN_MENU_HTML)
                 .withLifetime(CustomPageLifetime.CantClose)
                 .addEventListener(BTN_START, CustomUIEventBindingType.Activating,
-                        v -> handleStart(wrap(pageSlot[0])))
+                        v -> {
+                            handleStart(wrap(pageSlot[0]));
+                            runStateManager.startRun(playerRef.getUuid(), playerRef);
+                            gameHud.show(playerRef);
+                        })
                 .addEventListener(BTN_DISCORD, CustomUIEventBindingType.Activating,
                         v -> handleDiscord(actions))
                 .addEventListener(BTN_QUIT, CustomUIEventBindingType.Activating,
@@ -130,7 +161,7 @@ public final class MainMenuPage {
               .menu_bg {
                 anchor-width: 1955;
                 anchor-height: 1080;
-                background-image: HUD/Images/MainMenuBG.png;
+                background-color: #00000066;
                 layout-mode: top;
                 horizontal-align: center;
                 vertical-align: center;

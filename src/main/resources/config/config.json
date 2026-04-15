@@ -1,0 +1,11 @@
+{
+  "lobbySpawn": {
+    "x": 81.5,
+    "y": 121.0,
+    "z": 5.5,
+    "yaw": 0.0,
+    "pitch": -11.5,
+    "roll": 0.0
+  },
+  "weather": "ZONE3_HEDERA"
+}
