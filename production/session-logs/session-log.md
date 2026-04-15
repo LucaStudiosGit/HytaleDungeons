@@ -4079,3 +4079,128 @@ src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
 src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
 ---
 
+## Session End: 20260415_205231
+### Uncommitted Changes
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260415_205759
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+---
+
+## Session End: 20260415_210646
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260415_211302
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260415_212109
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260415_212957
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameOverPage.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260415_213302
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameOverPage.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260415_213448
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameOverPage.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+
+## Session End: 20260415_213518
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/-1.-1.region.bin
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.-1.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/GameOverPage.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+

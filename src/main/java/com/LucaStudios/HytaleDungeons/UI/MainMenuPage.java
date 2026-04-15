@@ -11,6 +11,10 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+
 /**
  * Shows a modal main menu (Start / Discord / Quit) on {@link PlayerReadyEvent}.
  *
@@ -49,6 +53,7 @@ public final class MainMenuPage {
     }
 
     private final JavaPlugin plugin;
+    private final ConcurrentHashMap<UUID, HyUIPage> activePages = new ConcurrentHashMap<>();
 
     public MainMenuPage(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -75,24 +80,38 @@ public final class MainMenuPage {
     }
 
     private HyUIPage openFor(PlayerRef playerRef, Store<EntityStore> store) {
-        // pageSlot holds the opened page so the Start handler can close it.
-        // Lambdas capture the array, then read pageSlot[0] at click-time (after open() has run).
-        final HyUIPage[] pageSlot = new HyUIPage[1];
+        final UUID playerId = playerRef.getUuid();
         final PlayerActions actions = liveActions(playerRef);
+
+        // Close any previously-open menu for this player before opening a new one,
+        // so Lobby-reopen after death doesn't leave the prior page handle orphaned.
+        closeFor(playerId);
 
         PageBuilder builder = PageBuilder.pageForPlayer(playerRef)
                 .fromHtml(MAIN_MENU_HTML)
                 .withLifetime(CustomPageLifetime.CantClose)
                 .addEventListener(BTN_START, CustomUIEventBindingType.Activating,
-                        v -> handleStart(wrap(pageSlot[0])))
+                        v -> {
+                            plugin.getLogger().at(Level.INFO)
+                                    .log("MainMenu: Start pressed by %s", playerId);
+                            handleStart(wrap(activePages.remove(playerId)));
+                        })
                 .addEventListener(BTN_DISCORD, CustomUIEventBindingType.Activating,
                         v -> handleDiscord(actions))
                 .addEventListener(BTN_QUIT, CustomUIEventBindingType.Activating,
                         v -> handleQuit(actions));
 
         HyUIPage page = builder.open(store);
-        pageSlot[0] = page;
+        activePages.put(playerId, page);
         return page;
+    }
+
+    /** Force-close any active main menu for this player. Safe to call from any thread. */
+    public void closeFor(UUID playerId) {
+        HyUIPage page = activePages.remove(playerId);
+        if (page != null) {
+            try { page.close(); } catch (Throwable ignored) {}
+        }
     }
 
     private static PageController wrap(HyUIPage page) {
@@ -168,11 +187,11 @@ public final class MainMenuPage {
                 anchor-width: 60;
                 anchor-height: 64;
               }
-              .btn_start {
+              .menu_start_size {
                 anchor-width: 340;
                 anchor-height: 64;
               }
-              .btn_dark {
+              .menu_dark_size {
                 anchor-width: 200;
                 anchor-height: 52;
               }
@@ -186,7 +205,7 @@ public final class MainMenuPage {
                     <div class="menu_v_spacer"></div>
                     <div class="menu_bottom_row">
                         <div class="menu_margin"></div>
-                        <button id="btn_start" class="custom-textbutton btn_start"
+                        <button id="btn_start" class="custom-textbutton menu_start_size"
                             data-hyui-default-bg="background-image: HUD/Images/BtnGreen.png;"
                             data-hyui-hovered-bg="background-image: HUD/Images/BtnGreenHov.png;"
                             data-hyui-pressed-bg="background-image: HUD/Images/BtnGreenPrs.png;"
@@ -196,7 +215,7 @@ public final class MainMenuPage {
                             <label>START GAME</label>
                         </button>
                         <div class="menu_h_spacer"></div>
-                        <button id="btn_discord" class="custom-textbutton btn_dark"
+                        <button id="btn_discord" class="custom-textbutton menu_dark_size"
                             data-hyui-default-bg="background-image: HUD/Images/BtnDark.png;"
                             data-hyui-hovered-bg="background-image: HUD/Images/BtnDarkHov.png;"
                             data-hyui-pressed-bg="background-image: HUD/Images/BtnDarkPrs.png;"
@@ -206,13 +225,13 @@ public final class MainMenuPage {
                             <label>Discord</label>
                         </button>
                         <div class="menu_btn_gap"></div>
-                        <button id="btn_quit" class="custom-textbutton btn_dark"
+                        <button id="btn_quit" class="custom-textbutton menu_dark_size"
                             data-hyui-default-bg="background-image: HUD/Images/BtnDark.png;"
                             data-hyui-hovered-bg="background-image: HUD/Images/BtnDarkHov.png;"
                             data-hyui-pressed-bg="background-image: HUD/Images/BtnDarkPrs.png;"
                             data-hyui-default-label-style="color: #cccccc; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
                             data-hyui-hovered-label-style="color: #ffffff; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
-                            data-hyui-pressed-label-style="color: #aaaaaa; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
+                            data-hyui-pressed-label-style="color: #aaaaaa; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;">
                             <label>Exit</label>
                         </button>
                         <div class="menu_margin"></div>

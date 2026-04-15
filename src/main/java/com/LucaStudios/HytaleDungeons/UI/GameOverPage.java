@@ -12,6 +12,9 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Modal game-over screen (no lives left). Same visual treatment as
@@ -30,6 +33,19 @@ public final class GameOverPage {
 
     static final String BTN_RESTART = "btn_restart";
     static final String BTN_LOBBY = "btn_lobby";
+
+    /** Delay between close(game-over) and open(main-menu) so the client-side
+     *  HyUI state fully tears down the old page before the new one is wired up.
+     *  Without this delay the main-menu reopens in the same tick and its button
+     *  events never fire. */
+    private static final long LOBBY_REOPEN_DELAY_MS = 250L;
+
+    private static final ScheduledExecutorService SCHEDULER =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "GameOverPage-reopen");
+                t.setDaemon(true);
+                return t;
+            });
 
     private final RunStateManager runStateManager;
     private final MainMenuPage mainMenuPage;
@@ -83,14 +99,25 @@ public final class GameOverPage {
             // Reset the run so the player lands on floor 1 at the proper
             // spawn point (same pipeline the Restart button uses).
             runStateManager.onNewRunRequested(playerId, playerRef);
-            // Open the lobby/main-menu on top of the fresh floor.
-            mainMenuPage.showFor(playerRef, store);
+        };
+        Runnable reopenMenu = () -> {
+            if (world == null) {
+                if (playerRef.isValid()) mainMenuPage.showFor(playerRef, store);
+                return;
+            }
+            world.execute(() -> {
+                if (!playerRef.isValid()) return;
+                mainMenuPage.showFor(playerRef, store);
+            });
         };
         if (world != null) {
             world.execute(flow);
         } else {
             flow.run();
         }
+        // Defer the main-menu open so the game-over close packet has time to
+        // fully tear down on the client before the new page is wired up.
+        SCHEDULER.schedule(reopenMenu, LOBBY_REOPEN_DELAY_MS, TimeUnit.MILLISECONDS);
     }
 
     private void closePage(HyUIPage page, UUID playerId) {

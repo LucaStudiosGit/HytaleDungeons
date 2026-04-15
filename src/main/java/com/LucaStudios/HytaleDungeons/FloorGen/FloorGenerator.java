@@ -174,15 +174,14 @@ public final class FloorGenerator {
 
         // World-thread operations: mob cleanup, block placement, teleport, callback.
         // Mob removal MUST run on the world thread (Store.removeEntity requirement).
-        // We pre-remove tracked mobs ourselves with isValid() checks so that the
-        // subsequent /entity clean nuke has fewer targets and is less likely to
-        // crash on the engine's parallel flock-membership race condition.
+        // We rely solely on tracked-mob removal — the /entity clean fallback
+        // was removed because it crashed on FlockMembership refs whenever it
+        // ran in the same tick as our own removals.
         if (world != null) {
             world.execute(() -> {
                 // Phase 1: remove mobs we're tracking (safe, per-entity try/catch)
                 int preRemoved = enemyManager.removeTrackedMobs();
-                // Phase 2: cancel stagger futures, clear maps, /entity clean for
-                // any untracked orphans (e.g. survived a server restart)
+                // Phase 2: cancel pending stagger futures and clear tracking maps
                 enemyManager.cleanAllEntities();
                 logger.accept("Mob cleanup: pre-removed " + preRemoved + " tracked mobs");
 
