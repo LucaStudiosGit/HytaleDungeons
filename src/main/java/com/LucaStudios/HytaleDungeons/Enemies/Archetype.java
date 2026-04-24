@@ -1,9 +1,5 @@
 package com.LucaStudios.HytaleDungeons.Enemies;
 
-/**
- * Enemy archetypes from the Enemy AI GDD.
- * Each archetype has a base HP, base ATK, and a weight in the spawn roll.
- */
 public enum Archetype {
     MELEE (20, 10, 0.65, "Goblin_Hermit"),
     RANGED(10, 10, 0.25, "Skeleton_Burnt_Archer"),

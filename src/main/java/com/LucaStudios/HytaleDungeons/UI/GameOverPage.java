@@ -17,13 +17,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Modal game-over screen (no lives left). Same visual treatment as
- * {@link DeathPage} — transparent-red fullscreen overlay, "You Have Died!"
- * title, skull — but shows "No more lives!" and offers two buttons:
+ * Modal game-over screen (no lives left). Visually mirrors {@link VictoryPage}
+ * — same typographic hero + stats-row layout — but with a crimson palette.
  *
  * <ul>
- *   <li><b>Restart</b> — calls {@link RunStateManager#onNewRunRequested}.</li>
- *   <li><b>Lobby</b>  — reopens the {@link MainMenuPage}.</li>
+ *   <li><b>New Run</b> — calls {@link RunStateManager#onNewRunRequested}.</li>
+ *   <li><b>Lobby</b>   — resets the run and reopens {@link MainMenuPage} after
+ *       a brief tear-down delay.</li>
  * </ul>
  *
  * Non-dismissable ({@link CustomPageLifetime#CantClose}); the buttons are the
@@ -56,13 +56,21 @@ public final class GameOverPage {
         this.mainMenuPage = mainMenuPage;
     }
 
+    /** Immutable stats snapshot baked into the page HTML at open time. */
+    public record GameOverStats(int floorReached,
+                                int mobsSlain,
+                                int livesRemaining,
+                                long runTimeMs) {}
+
     /** Open the game-over page. Must be called on the world thread. */
-    public void showFor(PlayerRef playerRef, Store<EntityStore> store) {
+    public void showFor(PlayerRef playerRef, Store<EntityStore> store, GameOverStats stats) {
         UUID playerId = playerRef.getUuid();
         final HyUIPage[] pageSlot = new HyUIPage[1];
 
+        String html = buildHtml(stats);
+
         HyUIPage page = PageBuilder.pageForPlayer(playerRef)
-                .fromHtml(HTML)
+                .fromHtml(html)
                 .withLifetime(CustomPageLifetime.CantClose)
                 .addEventListener(BTN_RESTART, CustomUIEventBindingType.Activating,
                         v -> handleRestart(pageSlot[0], playerRef, playerId))
@@ -94,11 +102,9 @@ public final class GameOverPage {
         UUID playerId = playerRef.getUuid();
         closePage(page, playerId);
         World world = worldFromPlayerRef(playerRef);
-        Runnable flow = () -> {
+        Runnable reset = () -> {
             if (!playerRef.isValid()) return;
-            // Reset the run so the player lands on floor 1 at the proper
-            // spawn point (same pipeline the Restart button uses).
-            runStateManager.onNewRunRequested(playerId, playerRef);
+            runStateManager.onReturnToLobby(playerId, playerRef);
         };
         Runnable reopenMenu = () -> {
             if (world == null) {
@@ -111,9 +117,9 @@ public final class GameOverPage {
             });
         };
         if (world != null) {
-            world.execute(flow);
+            world.execute(reset);
         } else {
-            flow.run();
+            reset.run();
         }
         // Defer the main-menu open so the game-over close packet has time to
         // fully tear down on the client before the new page is wired up.
@@ -134,90 +140,208 @@ public final class GameOverPage {
         return ref.getStore().getExternalData().getWorld();
     }
 
-    private static final String HTML = """
-            <style>
-              .go_bg {
-                anchor-top: 0;
-                anchor-bottom: 0;
-                anchor-left: 0;
-                anchor-right: 0;
-                background-color: #aa000088;
-                layout-mode: top;
-              }
-              .go_top_spacer {
-                anchor-width: 1920;
-                anchor-height: 220;
-              }
-              .go_title {
-                anchor-width: 1920;
-                anchor-height: 140;
-                text-align: center;
-                color: #ffffff;
-                font-size: 96;
-                font-weight: bold;
-                font-family: secondary;
-              }
-              .go_skull {
-                anchor-width: 256;
-                anchor-height: 256;
-                horizontal-align: center;
-                margin-top: 20;
-                background-image: HUD/Images/SkullIcon.png;
-              }
-              .go_line {
-                anchor-width: 1920;
-                anchor-height: 100;
-                margin-top: 30;
-                text-align: center;
-                color: #ffffff;
-                font-size: 56;
-                font-weight: bold;
-                font-family: secondary;
-              }
-              .go_btn_row {
-                layout-mode: left;
-                layout-align: middlecenter;
-                anchor-width: 1920;
-                anchor-height: 80;
-                margin-top: 40;
-              }
-              .go_btn {
-                anchor-width: 260;
-                anchor-height: 64;
-              }
-              .go_btn_gap {
-                anchor-width: 20;
-                anchor-height: 64;
-              }
-            </style>
-            <div class="page-overlay">
-                <div class="go_bg">
-                    <div class="go_top_spacer"></div>
-                    <label class="go_title">You Have Died!</label>
-                    <div class="go_skull"></div>
-                    <label class="go_line">No more lives!</label>
-                    <div class="go_btn_row">
-                        <button id="btn_restart" class="custom-textbutton go_btn"
-                            data-hyui-default-bg="background-image: HUD/Images/BtnGreen.png;"
-                            data-hyui-hovered-bg="background-image: HUD/Images/BtnGreenHov.png;"
-                            data-hyui-pressed-bg="background-image: HUD/Images/BtnGreenPrs.png;"
-                            data-hyui-default-label-style="color: #ffffff; font-size: 20; font-weight: bold; font-family: secondary; text-transform: uppercase; text-align: center; vertical-align: center;"
-                            data-hyui-hovered-label-style="color: #ffffff; font-size: 20; font-weight: bold; font-family: secondary; text-transform: uppercase; text-align: center; vertical-align: center;"
-                            data-hyui-pressed-label-style="color: #ddffdd; font-size: 19; font-weight: bold; font-family: secondary; text-transform: uppercase; text-align: center; vertical-align: center;">
-                            <label>Restart</label>
-                        </button>
-                        <div class="go_btn_gap"></div>
-                        <button id="btn_lobby" class="custom-textbutton go_btn"
-                            data-hyui-default-bg="background-image: HUD/Images/BtnDark.png;"
-                            data-hyui-hovered-bg="background-image: HUD/Images/BtnDarkHov.png;"
-                            data-hyui-pressed-bg="background-image: HUD/Images/BtnDarkPrs.png;"
-                            data-hyui-default-label-style="color: #cccccc; font-size: 18; font-family: secondary; text-align: center; vertical-align: center;"
-                            data-hyui-hovered-label-style="color: #ffffff; font-size: 18; font-family: secondary; text-align: center; vertical-align: center;"
-                            data-hyui-pressed-label-style="color: #aaaaaa; font-size: 18; font-family: secondary; text-align: center; vertical-align: center;">
-                            <label>Go to Lobby</label>
-                        </button>
+    // ── HTML ────────────────────────────────────────────────────────────
+
+    private static String buildHtml(GameOverStats stats) {
+        String timeText = formatDuration(stats.runTimeMs());
+        String statsRow = ""
+                + statCard("MOBS SLAIN", Integer.toString(stats.mobsSlain()),      "#ff9060")
+                + gap()
+                + statCard("FLOORS CLEARED", Integer.toString(Math.max(0, stats.floorReached() - 1)), "#ff6f8a")
+                + gap()
+                + statCard("TIME",       timeText,                                  "#e0c8ff");
+
+        return ("""
+                <style>
+                  .go_bg {
+                    anchor-top: 0;
+                    anchor-bottom: 0;
+                    anchor-left: 0;
+                    anchor-right: 0;
+                    background-color: #130308ee;
+                    layout-mode: top;
+                  }
+                  .go_header_spacer {
+                    anchor-width: 1920;
+                    anchor-height: 90;
+                    horizontal-align: center;
+                  }
+                  .go_eyebrow {
+                    anchor-width: 1920;
+                    anchor-height: 44;
+                    horizontal-align: center;
+                    text-align: center;
+                    color: #e6b0b0;
+                    font-size: 26;
+                    font-weight: bold;
+                    font-family: secondary;
+                    text-transform: uppercase;
+                  }
+                  .go_title {
+                    anchor-width: 1920;
+                    anchor-height: 160;
+                    margin-top: 4;
+                    horizontal-align: center;
+                    text-align: center;
+                    color: #ff5a5a;
+                    font-size: 140;
+                    font-weight: bold;
+                    font-family: secondary;
+                    text-transform: uppercase;
+                  }
+                  .go_divider {
+                    anchor-width: 560;
+                    anchor-height: 3;
+                    margin-top: 6;
+                    horizontal-align: center;
+                    background-color: #c03030;
+                  }
+                  .go_subtitle {
+                    anchor-width: 1920;
+                    anchor-height: 46;
+                    margin-top: 14;
+                    horizontal-align: center;
+                    text-align: center;
+                    color: #ffcfcf;
+                    font-size: 26;
+                    font-weight: bold;
+                    font-family: secondary;
+                    text-transform: uppercase;
+                  }
+
+                  /* Stats row: 3 cards (180) + 2 gaps (24) = 588 wide */
+                  .go_stats_row {
+                    layout-mode: left;
+                    anchor-width: 588;
+                    anchor-height: 200;
+                    margin-top: 48;
+                    horizontal-align: center;
+                  }
+                  .go_stat_gap {
+                    anchor-width: 24;
+                    anchor-height: 200;
+                  }
+                  .go_stat_frame {
+                    anchor-width: 180;
+                    anchor-height: 200;
+                    layout-mode: top;
+                    background-color: #46101a;
+                  }
+                  .go_stat_frame_inset {
+                    anchor-width: 176;
+                    anchor-height: 196;
+                    margin-top: 2;
+                    horizontal-align: center;
+                    layout-mode: top;
+                    background-color: #150810ee;
+                  }
+                  .go_stat_label {
+                    anchor-width: 176;
+                    anchor-height: 30;
+                    margin-top: 22;
+                    text-align: center;
+                    color: #c88898;
+                    font-size: 16;
+                    font-weight: bold;
+                    font-family: secondary;
+                    text-transform: uppercase;
+                  }
+                  .go_stat_rule {
+                    anchor-width: 60;
+                    anchor-height: 2;
+                    margin-top: 10;
+                    horizontal-align: center;
+                    background-color: #5a2a36;
+                  }
+                  .go_stat_value {
+                    anchor-width: 176;
+                    anchor-height: 80;
+                    margin-top: 14;
+                    text-align: center;
+                    font-size: 56;
+                    font-weight: bold;
+                    font-family: secondary;
+                  }
+
+                  /* Button row centered (2 btns 260 + gap 28 = 548 wide) */
+                  .go_btn_row {
+                    layout-mode: left;
+                    anchor-width: 548;
+                    anchor-height: 64;
+                    margin-top: 56;
+                    horizontal-align: center;
+                  }
+                  .go_btn_gap {
+                    anchor-width: 28;
+                    anchor-height: 64;
+                  }
+                  .go_btn {
+                    anchor-width: 260;
+                    anchor-height: 64;
+                  }
+                </style>
+                <div class="page-overlay">
+                    <div class="go_bg">
+                        <div class="go_header_spacer"></div>
+                        <label class="go_eyebrow">Run Ended</label>
+                        <label class="go_title">Defeated</label>
+                        <div class="go_divider"></div>
+                        <label class="go_subtitle">You fell on floor %d</label>
+                        <div class="go_stats_row">
+                            %s
+                        </div>
+                        <div class="go_btn_row">
+                            <button id="%BTN_RESTART%" class="custom-textbutton go_btn"
+                                data-hyui-default-bg="background-image: HUD/Images/BtnGreen.png;"
+                                data-hyui-hovered-bg="background-image: HUD/Images/BtnGreenHov.png;"
+                                data-hyui-pressed-bg="background-image: HUD/Images/BtnGreenPrs.png;"
+                                data-hyui-default-label-style="color: #ffffff; font-size: 20; font-weight: bold; font-family: secondary; text-transform: uppercase; text-align: center; vertical-align: center;"
+                                data-hyui-hovered-label-style="color: #ffffff; font-size: 20; font-weight: bold; font-family: secondary; text-transform: uppercase; text-align: center; vertical-align: center;"
+                                data-hyui-pressed-label-style="color: #ddffdd; font-size: 19; font-weight: bold; font-family: secondary; text-transform: uppercase; text-align: center; vertical-align: center;">
+                                <label>New Run</label>
+                            </button>
+                            <div class="go_btn_gap"></div>
+                            <button id="%BTN_LOBBY%" class="custom-textbutton go_btn"
+                                data-hyui-default-bg="background-image: HUD/Images/BtnDark.png;"
+                                data-hyui-hovered-bg="background-image: HUD/Images/BtnDarkHov.png;"
+                                data-hyui-pressed-bg="background-image: HUD/Images/BtnDarkPrs.png;"
+                                data-hyui-default-label-style="color: #cccccc; font-size: 18; font-family: secondary; text-align: center; vertical-align: center;"
+                                data-hyui-hovered-label-style="color: #ffffff; font-size: 18; font-family: secondary; text-align: center; vertical-align: center;"
+                                data-hyui-pressed-label-style="color: #aaaaaa; font-size: 18; font-family: secondary; text-align: center; vertical-align: center;">
+                                <label>Back to Lobby</label>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-            """;
+                """)
+                .replace("%BTN_RESTART%", BTN_RESTART)
+                .replace("%BTN_LOBBY%", BTN_LOBBY)
+                .formatted(stats.floorReached(), statsRow);
+    }
+
+    private static String statCard(String label, String value, String valueColor) {
+        return ("""
+                <div class="go_stat_frame">
+                    <div class="go_stat_frame_inset">
+                        <label class="go_stat_label">%LABEL%</label>
+                        <div class="go_stat_rule"></div>
+                        <label class="go_stat_value" style="color: %COLOR%;">%VALUE%</label>
+                    </div>
+                </div>
+                """)
+                .replace("%LABEL%", label)
+                .replace("%COLOR%", valueColor)
+                .replace("%VALUE%", value);
+    }
+
+    private static String gap() {
+        return "<div class=\"go_stat_gap\"></div>";
+    }
+
+    private static String formatDuration(long ms) {
+        long totalSeconds = Math.max(0, ms) / 1000L;
+        long minutes = totalSeconds / 60L;
+        long seconds = totalSeconds % 60L;
+        return String.format("%d:%02d", minutes, seconds);
+    }
 }

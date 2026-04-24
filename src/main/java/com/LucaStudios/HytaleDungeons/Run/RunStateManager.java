@@ -1,6 +1,11 @@
 package com.LucaStudios.HytaleDungeons.Run;
 
 import com.LucaStudios.HytaleDungeons.Camera.TopDownView;
+import com.LucaStudios.HytaleDungeons.Inventroy.Equipment;
+import com.LucaStudios.HytaleDungeons.Loot.ItemCategory;
+import com.LucaStudios.HytaleDungeons.Loot.ItemDatabase;
+import com.LucaStudios.HytaleDungeons.Loot.ItemDefinition;
+import com.LucaStudios.HytaleDungeons.PlayerData.PlayerLoadout;
 import com.LucaStudios.HytaleDungeons.Visual.FullBright;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorData;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorGenerator;
@@ -9,7 +14,7 @@ import com.LucaStudios.HytaleDungeons.Health.HealthManager;
 import com.LucaStudios.HytaleDungeons.PlayerData.PlayerDataManager;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
@@ -43,9 +48,15 @@ public final class RunStateManager {
     public static final long DESCENDING_TRANSITION_DURATION_MS = 2000L;
 
     // --- Default Loadout (from GDD) ---
-    private static final String DEFAULT_WEAPON = "Weapon_Sword_Iron";
+    // NOTE: Hytale's vanilla Weapon_Sword_Wood ships with NO BaseDamage interactions,
+    // so it deals zero damage and never fires a damage event. Crude is the
+    // closest "starter" feel that has full damage interactions defined.
+    private static final String DEFAULT_WEAPON = "Weapon_Sword_Crude";
     private static final String DEFAULT_CROSSBOW = "Weapon_Crossbow_Iron";
     private static final String DEFAULT_ARROW = "Weapon_Arrow_Crude";
+
+    /** Hytale armor slot ordinals — see {@code com.hypixel.hytale.protocol.ItemArmorSlot}. */
+    private static final short ARMOR_SLOT_CHEST = 1;
 
     private final JavaPlugin plugin;
     private final ConcurrentHashMap<UUID, RunData> runs = new ConcurrentHashMap<>();
@@ -63,6 +74,8 @@ public final class RunStateManager {
     private FloorGenerator floorGenerator;
     private com.LucaStudios.HytaleDungeons.UI.DeathPage deathPage;
     private com.LucaStudios.HytaleDungeons.UI.GameOverPage gameOverPage;
+    private com.LucaStudios.HytaleDungeons.UI.BetweenFloorsPage betweenFloorsPage;
+    private com.LucaStudios.HytaleDungeons.UI.VictoryPage victoryPage;
 
     /** Optional: modal death page shown during the death-screen duration. */
     public void setDeathPage(com.LucaStudios.HytaleDungeons.UI.DeathPage deathPage) {
@@ -72,6 +85,16 @@ public final class RunStateManager {
     /** Optional: modal game-over page shown when the player runs out of lives. */
     public void setGameOverPage(com.LucaStudios.HytaleDungeons.UI.GameOverPage gameOverPage) {
         this.gameOverPage = gameOverPage;
+    }
+
+    /** Optional: modal between-floors page shown after a floor is cleared. */
+    public void setBetweenFloorsPage(com.LucaStudios.HytaleDungeons.UI.BetweenFloorsPage betweenFloorsPage) {
+        this.betweenFloorsPage = betweenFloorsPage;
+    }
+
+    /** Optional: modal victory page shown after the final floor is cleared. */
+    public void setVictoryPage(com.LucaStudios.HytaleDungeons.UI.VictoryPage victoryPage) {
+        this.victoryPage = victoryPage;
     }
 
     public RunStateManager(JavaPlugin plugin) {
@@ -145,6 +168,7 @@ public final class RunStateManager {
 
         RunState oldState = data.getState();
         data.setState(RunState.DEAD);
+        data.incrementDeaths();
         fireStateChange(playerId, oldState, RunState.DEAD, data);
 
         log("Player %s died on floor %d (%d lives left)", playerId, data.getCurrentFloor(), data.getLivesRemaining());
@@ -184,12 +208,115 @@ public final class RunStateManager {
         if (data == null || data.getState() != RunState.FLOOR_ACTIVE) {
             return;
         }
+        data.incrementMobsKilled();
         data.decrementMobs();
         log("Mob killed for player %s — %d remaining", playerId, data.getMobsRemaining());
 
         if (data.getMobsRemaining() <= 0) {
-            advanceFloor(playerId, data);
+            showBetweenFloorsScreen(playerId, data);
         }
+    }
+
+    /**
+     * Transition into the between-floors page. Sets state to {@code UPGRADING}
+     * (movement/combat disabled) and opens the modal. The page's "Next Level"
+     * button calls {@link #onNextFloorRequested} to resume the run.
+     */
+    private void showBetweenFloorsScreen(UUID playerId, RunData data) {
+        PlayerRef playerRef = data.getPlayerRef();
+
+        FloorTemplateLibrary library = FloorTemplateLibrary.getInstance();
+        int nextFloor = data.getCurrentFloor() + 1;
+        if (library == null || nextFloor > library.floorCount()) {
+            showVictoryScreen(playerId, data);
+            return;
+        }
+
+        RunState oldState = data.getState();
+        data.setState(RunState.UPGRADING);
+        fireStateChange(playerId, oldState, RunState.UPGRADING, data);
+
+        log("Player %s cleared floor %d — showing between-floors screen",
+                playerId, data.getCurrentFloor());
+
+        if (betweenFloorsPage != null && playerRef != null && playerRef.isValid()) {
+            Ref<EntityStore> entityRef = playerRef.getReference();
+            if (entityRef != null && entityRef.isValid()) {
+                Store<EntityStore> store = entityRef.getStore();
+                final int clearedFloor = data.getCurrentFloor();
+                final int revives = data.getLivesRemaining();
+                try {
+                    betweenFloorsPage.showFor(playerRef, store, clearedFloor, revives);
+                } catch (Throwable t) {
+                    plugin.getLogger().at(Level.WARNING).log(
+                            "BetweenFloorsPage.showFor failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Called by {@link com.LucaStudios.HytaleDungeons.UI.BetweenFloorsPage} when
+     * the player picks one of the three offered items. Replaces the equipped
+     * slot matching the item's category in both {@link PlayerLoadout} and the
+     * Hytale hotbar, then kicks off the advance-floor pipeline.
+     */
+    public void onOfferSelected(UUID playerId, PlayerRef playerRef, String itemId, int itemLevel) {
+        RunData data = runs.get(playerId);
+        if (data == null || data.getState() != RunState.UPGRADING) {
+            return;
+        }
+
+        ItemDefinition item = ItemDatabase.getInstance().get(itemId);
+        if (playerDataManager != null) {
+            playerDataManager.replaceEquippedForCategory(playerId, itemId, itemLevel);
+        }
+
+        // Mirror the pick onto the Hytale hotbar on the world thread.
+        if (playerRef != null && playerRef.isValid()) {
+            Ref<EntityStore> entityRef = playerRef.getReference();
+            if (entityRef != null && entityRef.isValid()) {
+                Store<EntityStore> store = entityRef.getStore();
+                World world = store.getExternalData().getWorld();
+                world.execute(() -> writeEquippedItemToHotbar(entityRef, store, item));
+            }
+        }
+
+        log("Player %s picked offer %s LVL %d (%s) — advancing floor",
+                playerId, itemId, itemLevel, item.getCategory());
+
+        advanceFloor(playerId, data);
+    }
+
+    /**
+     * Writes a single equipped item into the right native inventory slot.
+     * Weapons go to hotbar 0, crossbows to hotbar 1, armor to the Chest slot
+     * of {@link InventoryComponent.Armor} (slot 1 — Head=0, Chest=1, Hands=2,
+     * Legs=3 per {@code com.hypixel.hytale.protocol.ItemArmorSlot}).
+     */
+    private void writeEquippedItemToHotbar(Ref<EntityStore> entityRef,
+                                           Store<EntityStore> store,
+                                           ItemDefinition item) {
+        if (!entityRef.isValid() || item == null || item.getHytaleItemId().isEmpty()) {
+            return;
+        }
+        ItemStack stack = new ItemStack(item.getHytaleItemId(), 1);
+
+        if (item.getCategory() == ItemCategory.ARMOR) {
+            var armor = store.getComponent(entityRef, InventoryComponent.Armor.getComponentType());
+            if (armor == null) return;
+            armor.getInventory().setItemStackForSlot(ARMOR_SLOT_CHEST, stack);
+            return;
+        }
+
+        var hotbar = store.getComponent(entityRef, InventoryComponent.Hotbar.getComponentType());
+        if (hotbar == null) return;
+        short slot = switch (item.getCategory()) {
+            case WEAPON -> (short) 0;
+            case CROSSBOW -> (short) 1;
+            case ARMOR -> (short) 0; // unreachable — handled above
+        };
+        hotbar.getInventory().setItemStackForSlot(slot, stack);
     }
 
     /**
@@ -205,9 +332,7 @@ public final class RunStateManager {
         FloorTemplateLibrary library = FloorTemplateLibrary.getInstance();
         int nextFloor = data.getCurrentFloor() + 1;
         if (library == null || nextFloor > library.floorCount()) {
-            log("Player %s cleared the final floor %d — dungeon complete!",
-                    playerId, data.getCurrentFloor());
-            // TODO: show win screen / end run via proper state transition
+            showVictoryScreen(playerId, data);
             return;
         }
 
@@ -295,17 +420,78 @@ public final class RunStateManager {
     }
 
     /**
-     * Called from GAME_OVER when the player chooses "New Run".
+     * Transition to the victory screen — the final floor has just been cleared.
+     * Sets state to {@code VICTORY} (movement/combat disabled) and opens the
+     * modal page seeded with a snapshot of run stats.
+     */
+    private void showVictoryScreen(UUID playerId, RunData data) {
+        RunState oldState = data.getState();
+        data.setState(RunState.VICTORY);
+        fireStateChange(playerId, oldState, RunState.VICTORY, data);
+
+        log("Player %s cleared the final floor %d — dungeon complete!",
+                playerId, data.getCurrentFloor());
+
+        PlayerRef playerRef = data.getPlayerRef();
+        if (victoryPage == null || playerRef == null || !playerRef.isValid()) {
+            return;
+        }
+        Ref<EntityStore> entityRef = playerRef.getReference();
+        if (entityRef == null || !entityRef.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = entityRef.getStore();
+
+        int playerLevel = (playerDataManager != null)
+                ? playerDataManager.getPlayerLevel(playerId) : 1;
+        var stats = new com.LucaStudios.HytaleDungeons.UI.VictoryPage.VictoryStats(
+                data.getCurrentFloor(),
+                data.getTotalMobsKilled(),
+                data.getTotalDeaths(),
+                data.getLivesRemaining(),
+                playerLevel,
+                data.getRunDurationMs());
+
+        World world = store.getExternalData().getWorld();
+        final com.LucaStudios.HytaleDungeons.UI.VictoryPage pageRef = victoryPage;
+        world.execute(() -> {
+            try {
+                pageRef.showFor(playerRef, store, stats);
+            } catch (Throwable t) {
+                plugin.getLogger().at(Level.WARNING).log(
+                        "VictoryPage.showFor failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Called from GAME_OVER or VICTORY when the player chooses "New Run".
      */
     public void onNewRunRequested(UUID playerId, PlayerRef playerRef) {
         RunData data = runs.get(playerId);
-        if (data == null || data.getState() != RunState.GAME_OVER) {
+        if (data == null
+                || (data.getState() != RunState.GAME_OVER
+                        && data.getState() != RunState.VICTORY)) {
             return;
         }
 
         RunState oldState = data.getState();
         data.reset(MAX_LIVES, STARTING_FLOOR);
         fireStateChange(playerId, oldState, RunState.FLOOR_ACTIVE, data);
+
+        // Clear the native death component so mobs treat the player as alive.
+        if (playerRef != null && playerRef.isValid()) {
+            Ref<EntityStore> entityRef = playerRef.getReference();
+            if (entityRef != null && entityRef.isValid()) {
+                Store<EntityStore> store = entityRef.getStore();
+                try {
+                    store.removeComponent(entityRef, DeathComponent.getComponentType());
+                } catch (Throwable t) {
+                    log("onNewRunRequested: failed to remove DeathComponent for %s: %s",
+                            playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+                }
+            }
+        }
 
         // Reset HP to full on new run
         if (healthManager != null) {
@@ -368,13 +554,11 @@ public final class RunStateManager {
             // Set up camera
             TopDownView.enable(playerRef);
 
-            // Create run data — player starts in FLOOR_ACTIVE on floor 1
+            // Create run data — player starts in LOBBY until they press Start.
             RunData data = new RunData(playerId, MAX_LIVES, STARTING_FLOOR);
             data.setPlayerRef(playerRef);
+            data.setState(RunState.LOBBY);
             runs.put(playerId, data);
-
-            // Equip default loadout
-            equipDefaultLoadout(playerRef);
 
             // Initialize health tracking — mirrors our MAX_HP onto the native HP bar
             if (healthManager != null) {
@@ -386,29 +570,107 @@ public final class RunStateManager {
                 playerDataManager.initPlayer(playerId);
             }
 
-            fireStateChange(playerId, null, RunState.FLOOR_ACTIVE, data);
-            log("Player %s joined — starting run on floor %d with %d lives", playerId, STARTING_FLOOR, MAX_LIVES);
+            fireStateChange(playerId, null, RunState.LOBBY, data);
+            log("Player %s joined — entering lobby", playerId);
+        });
+    }
 
-            // Generate floor 1 with block placement and teleport
-            if (floorGenerator != null) {
-                floorGenerator.generateFloor(playerId, STARTING_FLOOR, world, playerRef, () -> {
-                    FloorData floor = floorGenerator.getActiveFloor(playerId);
-                    if (floor != null) {
-                        data.setMobsRemaining(floor.getMobSpawnCount());
-                    }
-                });
-                // Hytale's native spawn-point logic can fire after our initial
-                // teleport on fresh join / server restart and land the player at
-                // the world spawn. Re-teleport after a short delay so we win.
-                scheduler.schedule(() -> {
-                    if (!playerRef.isValid()) return;
-                    world.execute(() -> {
-                        if (!playerRef.isValid()) return;
-                        floorGenerator.teleportToActiveFloorSpawn(playerId, playerRef);
-                    });
-                }, 750L, TimeUnit.MILLISECONDS);
+    /**
+     * Start a fresh run from the lobby. Invoked by
+     * {@link com.LucaStudios.HytaleDungeons.UI.MainMenuPage} when the player
+     * presses <b>Start</b>. Equips the default loadout and generates floor 1.
+     *
+     * <p>Unlike {@code onPlayerReady} (which used to race Hytale's native
+     * spawn-point logic and needed a 750ms safety re-teleport), the player
+     * has been in the world for seconds while browsing the lobby, so the
+     * native spawn logic has already settled. A single teleport is enough.</p>
+     */
+    public void startRunFromLobby(UUID playerId, PlayerRef playerRef) {
+        RunData data = runs.get(playerId);
+        if (data == null || data.getState() != RunState.LOBBY) {
+            return;
+        }
+
+        // Reset run stats so timer/kill count start at zero for this run.
+        data.reset(MAX_LIVES, STARTING_FLOOR);
+        RunState oldState = RunState.LOBBY;
+        fireStateChange(playerId, oldState, RunState.FLOOR_ACTIVE, data);
+
+        log("Player %s starting run from lobby", playerId);
+
+        equipDefaultLoadout(playerRef);
+
+        if (floorGenerator == null || playerRef == null || !playerRef.isValid()) {
+            return;
+        }
+        World world = worldFromPlayerRef(playerRef);
+        floorGenerator.generateFloor(playerId, STARTING_FLOOR, world, playerRef, () -> {
+            FloorData floor = floorGenerator.getActiveFloor(playerId);
+            if (floor != null) {
+                data.setMobsRemaining(floor.getMobSpawnCount());
             }
         });
+    }
+
+    /**
+     * Return to the lobby from a terminal run state (GAME_OVER or VICTORY).
+     * Invoked by the "Back to Lobby" button on those pages. For GAME_OVER we
+     * additionally clear the native death component and refill HP (the player
+     * ended the run dead); for VICTORY the player is already alive and the
+     * ECS entity is in a delicate post-transition state, so we skip those
+     * mutations entirely. Either way the run ends up sitting in
+     * {@link RunState#LOBBY} so the main menu's prepare step can teleport
+     * the player to the configured lobby spawn.
+     */
+    public void onReturnToLobby(UUID playerId, PlayerRef playerRef) {
+        RunData data = runs.get(playerId);
+        if (data == null
+                || (data.getState() != RunState.GAME_OVER
+                        && data.getState() != RunState.VICTORY)) {
+            return;
+        }
+
+        boolean wasGameOver = data.getState() == RunState.GAME_OVER;
+        RunState oldState = data.getState();
+        data.reset(MAX_LIVES, STARTING_FLOOR);
+        data.setState(RunState.LOBBY);
+        fireStateChange(playerId, oldState, RunState.LOBBY, data);
+
+        if (wasGameOver) {
+            // Clear the native death component and refill HP — the player
+            // ended the run dead so these are both needed before lobby entry.
+            if (playerRef != null && playerRef.isValid()) {
+                Ref<EntityStore> entityRef = playerRef.getReference();
+                if (entityRef != null && entityRef.isValid()) {
+                    Store<EntityStore> store = entityRef.getStore();
+                    try {
+                        store.removeComponent(entityRef, DeathComponent.getComponentType());
+                    } catch (Throwable t) {
+                        log("onReturnToLobby: failed to remove DeathComponent for %s: %s",
+                                playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+                    }
+                }
+            }
+            if (healthManager != null) {
+                try {
+                    healthManager.resetHealth(playerId);
+                } catch (Throwable t) {
+                    log("onReturnToLobby: resetHealth failed for %s: %s",
+                            playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+                }
+            }
+        }
+
+        if (playerDataManager != null) {
+            try {
+                playerDataManager.resetPlayer(playerId);
+            } catch (Throwable t) {
+                log("onReturnToLobby: resetPlayer failed for %s: %s",
+                        playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+            }
+        }
+
+        log("Player %s returned to lobby (from %s)", playerId, oldState);
     }
 
     private void onPlayerDisconnect(PlayerDisconnectEvent event) {
@@ -462,10 +724,15 @@ public final class RunStateManager {
                 if (entityRef != null && entityRef.isValid()) {
                     Store<EntityStore> store = entityRef.getStore();
                     World world = entityRef.getStore().getExternalData().getWorld();
+                    var stats = new com.LucaStudios.HytaleDungeons.UI.GameOverPage.GameOverStats(
+                            data.getCurrentFloor(),
+                            data.getTotalMobsKilled(),
+                            data.getLivesRemaining(),
+                            data.getRunDurationMs());
                     final com.LucaStudios.HytaleDungeons.UI.GameOverPage pageRef = gameOverPage;
                     world.execute(() -> {
                         try {
-                            pageRef.showFor(playerRef, store);
+                            pageRef.showFor(playerRef, store, stats);
                         } catch (Throwable t) {
                             plugin.getLogger().at(Level.WARNING).log(
                                     "GameOverPage.showFor failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
@@ -562,26 +829,25 @@ public final class RunStateManager {
             if (!entityRef.isValid()) {
                 return;
             }
-            Player player = store.getComponent(entityRef, Player.getComponentType());
-            if (player == null) {
-                return;
-            }
+            var hotbar = store.getComponent(entityRef, InventoryComponent.Hotbar.getComponentType());
+            var storage = store.getComponent(entityRef, InventoryComponent.Storage.getComponentType());
+            var backpack = store.getComponent(entityRef, InventoryComponent.Backpack.getComponentType());
+            var armor = store.getComponent(entityRef, InventoryComponent.Armor.getComponentType());
+            if (hotbar == null) return;
 
-            var inventory = player.getInventory();
-            inventory.getHotbar().clear();
-            inventory.getStorage().clear();
-            if (inventory.getBackpack() != null) {
-                inventory.getBackpack().clear();
-            }
+            hotbar.getInventory().clear();
+            if (storage != null) storage.getInventory().clear();
+            if (backpack != null) backpack.getInventory().clear();
+            if (armor != null) armor.getInventory().clear();
 
-            var hotbar = inventory.getHotbar();
-            hotbar.setItemStackForSlot((short) 0, new ItemStack(DEFAULT_WEAPON, 1));
-            hotbar.setItemStackForSlot((short) 1, new ItemStack(DEFAULT_CROSSBOW, 1));
-            // Slot 2 (armor) intentionally left empty — no default armor per GDD
+            hotbar.getInventory().setItemStackForSlot((short) 0, new ItemStack(DEFAULT_WEAPON, 1));
+            hotbar.getInventory().setItemStackForSlot((short) 1, new ItemStack(DEFAULT_CROSSBOW, 1));
 
             // Give 30 arrows in storage (not hotbar — hotbar is locked to slot 0)
-            inventory.getStorage()
-                    .setItemStackForSlot((short) 0, new ItemStack(DEFAULT_ARROW, 30));
+            if (storage != null) {
+                storage.getInventory()
+                        .setItemStackForSlot((short) 0, new ItemStack(DEFAULT_ARROW, 30));
+            }
         });
     }
 

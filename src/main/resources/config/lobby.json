@@ -1,0 +1,10 @@
+{
+  "spawn": {
+    "x": 81.5,
+    "y": 121,
+    "z": 5.5,
+    "yaw": 0.0,
+    "pitch": 0.0
+  },
+  "weather": "ZONE3_HEDERA"
+}

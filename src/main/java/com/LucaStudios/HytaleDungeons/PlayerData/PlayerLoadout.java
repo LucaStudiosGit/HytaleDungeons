@@ -15,11 +15,22 @@ import java.util.UUID;
  */
 public final class PlayerLoadout {
 
+    /** Level applied to the starter loadout when a player first joins or resets. */
+    public static final int STARTER_ITEM_LEVEL = 1;
+
     private final UUID playerId;
 
     private String equippedWeaponId;
     private String equippedArmorId;
     private String equippedCrossbowId;
+
+    /**
+     * Per-instance level for each equipped slot. Used in damage / armor
+     * formulas via {@code ItemDefinition.getEffectiveStat(level)}.
+     */
+    private int equippedWeaponLevel;
+    private int equippedArmorLevel;
+    private int equippedCrossbowLevel;
 
     /** Ordered by acquisition time (index 0 = oldest). */
     private final List<String> backpack;
@@ -36,6 +47,9 @@ public final class PlayerLoadout {
         this.equippedWeaponId = defaultWeaponId;
         this.equippedArmorId = defaultArmorId;
         this.equippedCrossbowId = defaultCrossbowId;
+        this.equippedWeaponLevel = STARTER_ITEM_LEVEL;
+        this.equippedArmorLevel = STARTER_ITEM_LEVEL;
+        this.equippedCrossbowLevel = STARTER_ITEM_LEVEL;
         this.playerLevel = 1;
         this.currentXP = 0;
     }
@@ -79,6 +93,18 @@ public final class PlayerLoadout {
 
     public String getEquippedCrossbowId() {
         return equippedCrossbowId;
+    }
+
+    public int getEquippedWeaponLevel() {
+        return equippedWeaponLevel;
+    }
+
+    public int getEquippedArmorLevel() {
+        return equippedArmorLevel;
+    }
+
+    public int getEquippedCrossbowLevel() {
+        return equippedCrossbowLevel;
     }
 
     public List<String> getBackpackItemIds() {
@@ -217,6 +243,30 @@ public final class PlayerLoadout {
         return lowestId;
     }
 
+    /**
+     * Replace the equipped item in the slot matching the item's category, and
+     * record its rolled instance level. Used by the between-floors reward pick
+     * — the previous equipped item is discarded (not moved to the backpack).
+     */
+    void setEquippedForCategory(String itemId, int itemLevel) {
+        ItemDefinition item = ItemDatabase.getInstance().get(itemId);
+        int safeLevel = Math.max(1, itemLevel);
+        switch (item.getCategory()) {
+            case WEAPON -> {
+                this.equippedWeaponId = itemId;
+                this.equippedWeaponLevel = safeLevel;
+            }
+            case ARMOR -> {
+                this.equippedArmorId = itemId;
+                this.equippedArmorLevel = safeLevel;
+            }
+            case CROSSBOW -> {
+                this.equippedCrossbowId = itemId;
+                this.equippedCrossbowLevel = safeLevel;
+            }
+        }
+    }
+
     // ── Reset ───────────────────────────────────────────────────────────
 
     /**
@@ -226,6 +276,9 @@ public final class PlayerLoadout {
         this.equippedWeaponId = defaultWeaponId;
         this.equippedArmorId = defaultArmorId;
         this.equippedCrossbowId = defaultCrossbowId;
+        this.equippedWeaponLevel = STARTER_ITEM_LEVEL;
+        this.equippedArmorLevel = STARTER_ITEM_LEVEL;
+        this.equippedCrossbowLevel = STARTER_ITEM_LEVEL;
         this.backpack.clear();
         this.playerLevel = 1;
         this.currentXP = 0;

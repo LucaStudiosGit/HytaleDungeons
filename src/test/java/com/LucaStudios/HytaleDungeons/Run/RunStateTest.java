@@ -13,23 +13,41 @@ class RunStateTest {
     }
 
     @Test
-    void allNonActiveStatesDisableMovementAndCombat() {
+    void lobbyAllowsMovementButNotCombat() {
+        assertTrue(RunState.LOBBY.isMovementEnabled(),
+                "Lobby should let the player walk around");
+        assertFalse(RunState.LOBBY.isCombatEnabled(),
+                "Lobby should not enable combat");
+    }
+
+    @Test
+    void allNonActiveStatesDisableCombat() {
         for (RunState state : RunState.values()) {
             if (state == RunState.FLOOR_ACTIVE) continue;
-            assertFalse(state.isMovementEnabled(),
-                    state + " should disable movement");
             assertFalse(state.isCombatEnabled(),
                     state + " should disable combat");
         }
     }
 
     @Test
-    void hasAllFiveStates() {
-        assertEquals(5, RunState.values().length);
+    void runEndingStatesDisableMovement() {
+        // Movement stays enabled in LOBBY/FLOOR_ACTIVE; every other state freezes the player.
+        for (RunState state : RunState.values()) {
+            if (state == RunState.FLOOR_ACTIVE || state == RunState.LOBBY) continue;
+            assertFalse(state.isMovementEnabled(),
+                    state + " should disable movement");
+        }
+    }
+
+    @Test
+    void hasAllStates() {
+        assertEquals(7, RunState.values().length);
+        assertNotNull(RunState.LOBBY);
         assertNotNull(RunState.FLOOR_ACTIVE);
         assertNotNull(RunState.UPGRADING);
         assertNotNull(RunState.DESCENDING);
         assertNotNull(RunState.DEAD);
         assertNotNull(RunState.GAME_OVER);
+        assertNotNull(RunState.VICTORY);
     }
 }

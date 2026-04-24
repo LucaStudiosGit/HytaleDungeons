@@ -16,12 +16,20 @@ public final class RunData {
     private int mobsRemaining;
     private PlayerRef playerRef;
 
+    // --- Run stats (victory screen) ---
+    private long runStartMs;
+    private int totalMobsKilled;
+    private int totalDeaths;
+
     public RunData(UUID playerId, int maxLives, int startingFloor) {
         this.playerId = playerId;
         this.state = RunState.FLOOR_ACTIVE;
         this.currentFloor = startingFloor;
         this.livesRemaining = maxLives;
         this.mobsRemaining = 0;
+        this.runStartMs = System.currentTimeMillis();
+        this.totalMobsKilled = 0;
+        this.totalDeaths = 0;
     }
 
     public PlayerRef getPlayerRef() {
@@ -80,6 +88,32 @@ public final class RunData {
         }
     }
 
+    // --- Run stats ---
+
+    public long getRunStartMs() {
+        return runStartMs;
+    }
+
+    public long getRunDurationMs() {
+        return System.currentTimeMillis() - runStartMs;
+    }
+
+    public int getTotalMobsKilled() {
+        return totalMobsKilled;
+    }
+
+    void incrementMobsKilled() {
+        totalMobsKilled++;
+    }
+
+    public int getTotalDeaths() {
+        return totalDeaths;
+    }
+
+    void incrementDeaths() {
+        totalDeaths++;
+    }
+
     /**
      * Reset to a fresh run (floor 1, full lives).
      */
@@ -88,5 +122,8 @@ public final class RunData {
         this.currentFloor = startingFloor;
         this.livesRemaining = maxLives;
         this.mobsRemaining = 0;
+        this.runStartMs = System.currentTimeMillis();
+        this.totalMobsKilled = 0;
+        this.totalDeaths = 0;
     }
 }

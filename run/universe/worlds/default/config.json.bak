@@ -44,7 +44,7 @@
     "SunshaftScaleFactor": 4.0
   },
   "RequiredPlugins": {},
-  "IsSpawningNPC": true,
+  "IsSpawningNPC": false,
   "IsSpawnMarkersEnabled": true,
   "IsAllNPCFrozen": false,
   "GameplayConfig": "Default",

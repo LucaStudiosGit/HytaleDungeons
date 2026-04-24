@@ -4,32 +4,7 @@ import com.LucaStudios.HytaleDungeons.Enemies.SpawnGroup;
 
 import java.util.List;
 
-/**
- * Per-player floor state: spawn point and the floor's spawn groups.
- * Owned exclusively by {@link FloorGenerator}.
- */
-public final class FloorData {
-
-    private final int floorNumber;
-    private final float[] playerSpawnPoint;
-    private final List<SpawnGroup> spawnGroups;
-
-    FloorData(int floorNumber, float[] spawnPoint, List<SpawnGroup> spawnGroups) {
-        this.floorNumber = floorNumber;
-        this.playerSpawnPoint = spawnPoint;
-        this.spawnGroups = spawnGroups;
-    }
-
-    public int getFloorNumber() { return floorNumber; }
-    public float[] getPlayerSpawnPoint() { return playerSpawnPoint; }
-    public List<SpawnGroup> getSpawnGroups() { return spawnGroups; }
-
-    public SpawnGroup findGroupById(String id) {
-        for (SpawnGroup g : spawnGroups) {
-            if (g.id().equals(id)) return g;
-        }
-        return null;
-    }
+public record FloorData(int floorNumber, float[] playerSpawnPoint, int fallY, List<SpawnGroup> spawnGroups) {
 
     public SpawnGroup findFirstZoneGroup() {
         for (SpawnGroup g : spawnGroups) {

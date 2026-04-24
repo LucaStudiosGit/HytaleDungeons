@@ -10,8 +10,7 @@ import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.inventory.SetActiveSlot;
 import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.inventory.Inventory;
-import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PlayerPacketFilter;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
@@ -105,10 +104,11 @@ public final class NoHotbarSwitchRestriction {
                         new CancelInteractionChain(chainId, forkedId)
                 );
 
-                player.getInventory().setActiveHotbarSlot(entityRef, (byte) 0, store);
+                InventoryComponent.Hotbar hotbar = store.getComponent(entityRef, InventoryComponent.Hotbar.getComponentType());
+                if (hotbar != null) hotbar.setActiveSlot((byte) 0);
 
                 playerRef.getPacketHandler().writeNoCache(
-                        new SetActiveSlot(Inventory.HOTBAR_SECTION_ID, 0)
+                        new SetActiveSlot(InventoryComponent.HOTBAR_SECTION_ID, 0)
                 );
             });
         }

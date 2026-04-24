@@ -2,11 +2,18 @@ package com.LucaStudios.HytaleDungeons.UI;
 
 import au.ellie.hyui.builders.HyUIPage;
 import au.ellie.hyui.builders.PageBuilder;
+import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
+import com.hypixel.hytale.builtin.weather.WeatherPlugin;
+import com.hypixel.hytale.builtin.weather.resources.WeatherResource;
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.modules.entity.teleport.Teleport;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -54,9 +61,15 @@ public final class MainMenuPage {
 
     private final JavaPlugin plugin;
     private final ConcurrentHashMap<UUID, HyUIPage> activePages = new ConcurrentHashMap<>();
+    private RunStateManager runStateManager;
 
     public MainMenuPage(JavaPlugin plugin) {
         this.plugin = plugin;
+    }
+
+    /** Wire the run-state manager so the Start button can kick off a run. */
+    public void setRunStateManager(RunStateManager runStateManager) {
+        this.runStateManager = runStateManager;
     }
 
     public void register() {
@@ -87,6 +100,8 @@ public final class MainMenuPage {
         // so Lobby-reopen after death doesn't leave the prior page handle orphaned.
         closeFor(playerId);
 
+        prepareLobby(playerRef, store);
+
         PageBuilder builder = PageBuilder.pageForPlayer(playerRef)
                 .fromHtml(MAIN_MENU_HTML)
                 .withLifetime(CustomPageLifetime.CantClose)
@@ -95,6 +110,9 @@ public final class MainMenuPage {
                             plugin.getLogger().at(Level.INFO)
                                     .log("MainMenu: Start pressed by %s", playerId);
                             handleStart(wrap(activePages.remove(playerId)));
+                            if (runStateManager != null) {
+                                runStateManager.startRunFromLobby(playerId, playerRef);
+                            }
                         })
                 .addEventListener(BTN_DISCORD, CustomUIEventBindingType.Activating,
                         v -> handleDiscord(actions))
@@ -104,6 +122,39 @@ public final class MainMenuPage {
         HyUIPage page = builder.open(store);
         activePages.put(playerId, page);
         return page;
+    }
+
+    private void prepareLobby(PlayerRef playerRef, Store<EntityStore> store) {
+        LobbyConfig config = LobbyConfig.getInstance();
+        if (config == null) return;
+        if (!playerRef.isValid()) return;
+
+        Ref<EntityStore> entityRef = playerRef.getReference();
+        if (entityRef == null || !entityRef.isValid()) return;
+
+        try {
+            Teleport teleport = Teleport.createForPlayer(
+                    new Vector3d(config.getSpawnX(), config.getSpawnY(), config.getSpawnZ()),
+                    new Vector3f(config.getSpawnPitch(), config.getSpawnYaw(), 0f));
+            store.addComponent(entityRef, Teleport.getComponentType(), teleport);
+        } catch (Throwable t) {
+            plugin.getLogger().at(Level.WARNING)
+                    .log("prepareLobby: teleport addComponent failed — %s",
+                            t.getClass().getSimpleName() + ": " + t.getMessage());
+        }
+
+        String weatherId = config.getWeather();
+        if (weatherId != null && !weatherId.isBlank()) {
+            try {
+                WeatherResource weather = store.getResource(
+                        WeatherPlugin.get().getWeatherResourceType());
+                if (weather != null) weather.setForcedWeather(weatherId);
+            } catch (Throwable t) {
+                plugin.getLogger().at(Level.WARNING)
+                        .log("Failed to set lobby weather '%s': %s",
+                                weatherId, t.getClass().getSimpleName() + ": " + t.getMessage());
+            }
+        }
     }
 
     /** Force-close any active main menu for this player. Safe to call from any thread. */
@@ -156,7 +207,6 @@ public final class MainMenuPage {
                 anchor-bottom: 0;
                 anchor-left: 0;
                 anchor-right: 0;
-                background-image: HUD/Images/MainMenuBG.png;
                 layout-mode: top;
               }
               .menu_title_area {

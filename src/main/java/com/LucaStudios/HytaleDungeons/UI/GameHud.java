@@ -1,5 +1,6 @@
 package com.LucaStudios.HytaleDungeons.UI;
 
+import au.ellie.hyui.builders.GroupBuilder;
 import au.ellie.hyui.builders.HudBuilder;
 import au.ellie.hyui.builders.HyUIHud;
 import au.ellie.hyui.builders.ImageBuilder;
@@ -7,11 +8,13 @@ import au.ellie.hyui.builders.LabelBuilder;
 import com.LucaStudios.HytaleDungeons.Health.HealthManager;
 import com.LucaStudios.HytaleDungeons.PlayerData.PlayerDataManager;
 import com.LucaStudios.HytaleDungeons.Run.RunData;
+import com.LucaStudios.HytaleDungeons.Run.RunState;
 import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
@@ -42,6 +45,7 @@ public final class GameHud {
     static final String ID_HP_FILL = "hud_hp_fill";
     static final String ID_POTION = "hud_potion";
     static final String ID_ARROWS = "hud_arrows";
+    static final String ID_HUD_BAR = "hud_bar";
 
     /**
      * Pre-rendered heart fill frames, indexed by HP bucket (0..10 = 0%..100%).
@@ -107,11 +111,12 @@ public final class GameHud {
             Player player = store.getComponent(entityRef, Player.getComponentType());
             PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
             if (player == null || playerRef == null) return;
-            showFor(player, playerRef, store, world);
+            showFor(player, playerRef, entityRef, store, world);
         });
     }
 
     private void showFor(Player player, PlayerRef playerRef,
+                         Ref<EntityStore> entityRef,
                          Store<EntityStore> store, World world) {
         UUID playerId = playerRef.getUuid();
 
@@ -126,7 +131,7 @@ public final class GameHud {
         // Seed caches now while we're on the world thread so the very
         // first HUD refresh already shows real values instead of 0 / 0.
         updateHpCache(playerId);
-        updateArrowCache(playerId, player);
+        updateArrowCache(playerId, entityRef, store);
 
         HyUIHud hud = HudBuilder.hudForPlayer(playerRef)
                 .fromHtml(HUD_HTML)
@@ -144,7 +149,7 @@ public final class GameHud {
     void onRefreshTick(HyUIHud hud, PlayerRef playerRef, World world) {
         UUID playerId = playerRef.getUuid();
         HudModel model = snapshot(playerId);
-        applyModel(hud, model);
+        applyModel(hud, model, isBarVisible(playerId));
         world.execute(() -> {
             if (!playerRef.isValid()) {
                 hpCache.remove(playerId);
@@ -155,9 +160,8 @@ public final class GameHud {
             Ref<EntityStore> entityRef = playerRef.getReference();
             if (entityRef == null || !entityRef.isValid()) return;
             Store<EntityStore> store = entityRef.getStore();
-            Player player = store.getComponent(entityRef, Player.getComponentType());
             updateHpCache(playerId);
-            if (player != null) updateArrowCache(playerId, player);
+            updateArrowCache(playerId, entityRef, store);
         });
     }
 
@@ -191,12 +195,13 @@ public final class GameHud {
     }
 
     /** World-thread arrow count. Scans hotbar + storage + backpack. */
-    private void updateArrowCache(UUID playerId, Player player) {
-        var inventory = player.getInventory();
-        if (inventory == null) { arrowCache.put(playerId, 0); return; }
-        int count = countItemIn(inventory.getHotbar())
-                  + countItemIn(inventory.getStorage())
-                  + countItemIn(inventory.getBackpack());
+    private void updateArrowCache(UUID playerId, Ref<EntityStore> entityRef, Store<EntityStore> store) {
+        var hotbar = store.getComponent(entityRef, InventoryComponent.Hotbar.getComponentType());
+        var storage = store.getComponent(entityRef, InventoryComponent.Storage.getComponentType());
+        var backpack = store.getComponent(entityRef, InventoryComponent.Backpack.getComponentType());
+        int count = countItemIn(hotbar != null ? hotbar.getInventory() : null)
+                  + countItemIn(storage != null ? storage.getInventory() : null)
+                  + countItemIn(backpack != null ? backpack.getInventory() : null);
         arrowCache.put(playerId, count);
     }
 
@@ -222,10 +227,24 @@ public final class GameHud {
     }
 
     /** Apply model fields to the HUD by id. Missing ids are silently ignored. */
-    static void applyModel(HyUIHud hud, HudModel model) {
+    static void applyModel(HyUIHud hud, HudModel model, boolean barVisible) {
+        hud.getById(ID_HUD_BAR, GroupBuilder.class)
+                .ifPresent(bar -> bar.withVisible(barVisible));
         setLabel(hud, ID_POTION, model.formatPotion());
         setLabel(hud, ID_ARROWS, model.formatArrows());
         setHeartFillFrame(hud, model.hpRatio());
+    }
+
+    /**
+     * Custom HUD bar is hidden while the player is in the lobby — the three
+     * slots (potion/heart/arrows) are run-only affordances. Defaults to
+     * visible when RunData is missing so we don't flash-hide the HUD during
+     * the brief window before the run-state manager has observed the player.
+     */
+    private boolean isBarVisible(UUID playerId) {
+        RunData runData = runStateManager.getRunData(playerId);
+        if (runData == null) return true;
+        return runData.getState() != RunState.LOBBY;
     }
 
     private static void setLabel(HyUIHud hud, String id, String text) {

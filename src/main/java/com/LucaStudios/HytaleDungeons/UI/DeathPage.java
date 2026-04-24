@@ -15,10 +15,10 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Modal death screen shown for the duration of {@code RunStateManager.DEATH_SCREEN_DURATION_MS}.
  *
- * <p>Transparent red full-screen background with a "DEATH" title, skull image,
- * countdown (3 → 2 → 1), and remaining-lives label. No buttons; cannot be
- * dismissed with Esc ({@link CustomPageLifetime#CantClose}). Closes itself
- * when the countdown expires.</p>
+ * <p>Visually mirrors {@link GameOverPage} (crimson palette, eyebrow + title +
+ * divider + subtitle layout) but without buttons — a large countdown card sits
+ * where the stats/button rows go. Closes itself when the countdown expires.
+ * Non-dismissable ({@link CustomPageLifetime#CantClose}).</p>
  */
 public final class DeathPage {
 
@@ -42,7 +42,7 @@ public final class DeathPage {
         long deadline = System.currentTimeMillis() + durationMs;
         deadlines.put(playerId, deadline);
 
-        String html = buildHtml(livesRemaining);
+        String html = buildHtml(livesRemaining, (int) Math.ceil(durationMs / 1000.0));
 
         HyUIPage page = PageBuilder.pageForPlayer(playerRef)
                 .fromHtml(html)
@@ -69,8 +69,7 @@ public final class DeathPage {
         int secs = (int) Math.ceil(remainingMs / 1000.0);
         if (secs < 1) secs = 1;
         final String text = Integer.toString(secs);
-        final String line = "Respawn in " + text + "..";
-        page.getById(ID_COUNTDOWN, LabelBuilder.class).ifPresent(l -> l.withText(line));
+        page.getById(ID_COUNTDOWN, LabelBuilder.class).ifPresent(l -> l.withText(text));
         return PageRefreshResult.UPDATE;
     }
 
@@ -86,67 +85,129 @@ public final class DeathPage {
         }
     }
 
-    private static String buildHtml(int livesRemaining) {
-        int initialSecs = 3;
-        return """
+    private static String buildHtml(int livesRemaining, int initialSecs) {
+        return ("""
                 <style>
-                  .death_bg {
+                  .dp_bg {
                     anchor-top: 0;
                     anchor-bottom: 0;
                     anchor-left: 0;
                     anchor-right: 0;
-                    background-color: #aa000088;
+                    background-color: #130308cc;
                     layout-mode: top;
                   }
-                  .death_top_spacer {
+                  .dp_header_spacer {
                     anchor-width: 1920;
-                    anchor-height: 220;
+                    anchor-height: 180;
+                    horizontal-align: center;
                   }
-                  .death_title {
+                  .dp_eyebrow {
+                    anchor-width: 1920;
+                    anchor-height: 44;
+                    horizontal-align: center;
+                    text-align: center;
+                    color: #e6b0b0;
+                    font-size: 26;
+                    font-weight: bold;
+                    font-family: secondary;
+                    text-transform: uppercase;
+                  }
+                  .dp_title {
                     anchor-width: 1920;
                     anchor-height: 140;
+                    margin-top: 4;
+                    horizontal-align: center;
                     text-align: center;
-                    color: #ffffff;
+                    color: #ff5a5a;
+                    font-size: 120;
+                    font-weight: bold;
+                    font-family: secondary;
+                    text-transform: uppercase;
+                  }
+                  .dp_divider {
+                    anchor-width: 560;
+                    anchor-height: 3;
+                    margin-top: 6;
+                    horizontal-align: center;
+                    background-color: #c03030;
+                  }
+                  .dp_subtitle {
+                    anchor-width: 1920;
+                    anchor-height: 46;
+                    margin-top: 14;
+                    horizontal-align: center;
+                    text-align: center;
+                    color: #ffcfcf;
+                    font-size: 26;
+                    font-weight: bold;
+                    font-family: secondary;
+                    text-transform: uppercase;
+                  }
+
+                  /* Countdown card — mirrors GameOverPage stat-frame styling */
+                  .dp_countdown_frame {
+                    anchor-width: 260;
+                    anchor-height: 220;
+                    margin-top: 48;
+                    layout-mode: top;
+                    horizontal-align: center;
+                    background-color: #46101a;
+                  }
+                  .dp_countdown_inset {
+                    anchor-width: 256;
+                    anchor-height: 216;
+                    margin-top: 2;
+                    horizontal-align: center;
+                    layout-mode: top;
+                    background-color: #150810ee;
+                  }
+                  .dp_countdown_label {
+                    anchor-width: 256;
+                    anchor-height: 30;
+                    margin-top: 22;
+                    text-align: center;
+                    color: #c88898;
+                    font-size: 16;
+                    font-weight: bold;
+                    font-family: secondary;
+                    text-transform: uppercase;
+                  }
+                  .dp_countdown_rule {
+                    anchor-width: 60;
+                    anchor-height: 2;
+                    margin-top: 10;
+                    horizontal-align: center;
+                    background-color: #5a2a36;
+                  }
+                  .dp_countdown_value {
+                    anchor-width: 256;
+                    anchor-height: 110;
+                    margin-top: 10;
+                    text-align: center;
+                    color: #ff9060;
                     font-size: 96;
                     font-weight: bold;
                     font-family: secondary;
                   }
-                  .death_skull {
-                    anchor-width: 256;
-                    anchor-height: 256;
-                    horizontal-align: center;
-                    margin-top: 20;
-                    background-image: HUD/Images/SkullIcon.png;
-                  }
-                  .death_countdown {
-                    anchor-width: 1920;
-                    anchor-height: 100;
-                    margin-top: 30;
-                    text-align: center;
-                    color: #ffffff;
-                    font-size: 56;
-                    font-weight: bold;
-                    font-family: secondary;
-                  }
-                  .death_lives {
-                    anchor-width: 1920;
-                    anchor-height: 60;
-                    margin-top: 20;
-                    text-align: center;
-                    color: #ffdddd;
-                    font-size: 32;
-                    font-family: secondary;
-                  }
                 </style>
                 <div class="page-overlay">
-                    <div class="death_bg">
-                        <div class="death_top_spacer"></div>
-                        <label class="death_title">You Have Died!</label>
-                        <div class="death_skull"></div>
-                        <label id="death_countdown" class="death_countdown">Respawn in %d..</label>
-                        <label class="death_lives">Revivals remaining: %d</label>
+                    <div class="dp_bg">
+                        <div class="dp_header_spacer"></div>
+                        <label class="dp_eyebrow">Respawning</label>
+                        <label class="dp_title">You Died</label>
+                        <div class="dp_divider"></div>
+                        <label class="dp_subtitle">Revivals remaining: %d</label>
+                        <div class="dp_countdown_frame">
+                            <div class="dp_countdown_inset">
+                                <label class="dp_countdown_label">Respawn In</label>
+                                <div class="dp_countdown_rule"></div>
+                                <label id="%ID_COUNTDOWN%" class="dp_countdown_value">%d</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                """.formatted(initialSecs, livesRemaining);
+                """)
+                .replace("%ID_COUNTDOWN%", ID_COUNTDOWN)
+                .formatted(livesRemaining, initialSecs);
     }
 }

@@ -150,6 +150,74 @@ public final class ItemDatabase {
         return itemsById.size();
     }
 
+    /**
+     * Roll a set of distinct loot offers for the between-floors reward screen.
+     * Picks {@code count} items from the full pool across all categories using
+     * rarity-weighted selection (same weights as {@link #rollRarity()}). Each
+     * pick is wrapped in a {@link LootOffer} carrying its rolled instance
+     * level: {@code clearedFloor + uniform(-1, 0, +1)}, clamped to ≥1.
+     *
+     * <p>If the pool is smaller than {@code count}, returns the whole pool.</p>
+     */
+    public List<LootOffer> rollOffersForFloor(int count, int clearedFloor) {
+        return rollOffersForFloor(count, clearedFloor, Map.of());
+    }
+
+    /**
+     * Same as {@link #rollOffersForFloor(int, int)} but skips a candidate when
+     * the player already has it equipped at the rolled level — i.e. an
+     * {@code (item, level)} the player just received is hidden.
+     *
+     * @param equippedItemLevels map of {@code itemId -> equipped level} for the
+     *                            player's currently equipped slots. Pass an
+     *                            empty map to disable filtering.
+     */
+    public List<LootOffer> rollOffersForFloor(int count, int clearedFloor,
+                                              Map<String, Integer> equippedItemLevels) {
+        List<ItemDefinition> all = new ArrayList<>(itemsById.values());
+        List<LootOffer> picks = new ArrayList<>(count);
+
+        int safetyAttempts = count * 40;
+        while (picks.size() < count && safetyAttempts-- > 0) {
+            int level = rollLevel(clearedFloor);
+            Rarity rolled = rollRarity();
+            List<ItemDefinition> tier = all.stream()
+                    .filter(i -> i.getRarity() == rolled
+                            && !containsItem(picks, i)
+                            && !isAlreadyEquippedAtLevel(equippedItemLevels, i, level))
+                    .collect(Collectors.toList());
+            if (tier.isEmpty()) {
+                tier = all.stream()
+                        .filter(i -> !containsItem(picks, i)
+                                && !isAlreadyEquippedAtLevel(equippedItemLevels, i, level))
+                        .collect(Collectors.toList());
+                if (tier.isEmpty()) continue; // try another level/rarity roll
+            }
+            ItemDefinition pick = tier.get(ThreadLocalRandom.current().nextInt(tier.size()));
+            picks.add(new LootOffer(pick, level));
+        }
+        return picks;
+    }
+
+    private static boolean isAlreadyEquippedAtLevel(Map<String, Integer> equippedItemLevels,
+                                                    ItemDefinition item, int level) {
+        Integer equippedLevel = equippedItemLevels.get(item.getId());
+        return equippedLevel != null && equippedLevel == level;
+    }
+
+    private static boolean containsItem(List<LootOffer> picks, ItemDefinition item) {
+        for (LootOffer offer : picks) {
+            if (offer.item() == item) return true;
+        }
+        return false;
+    }
+
+    /** Roll an item-instance level around the floor that was just cleared. */
+    private static int rollLevel(int clearedFloor) {
+        int variance = ThreadLocalRandom.current().nextInt(-1, 2); // -1, 0, or +1
+        return Math.max(1, clearedFloor + variance);
+    }
+
     private static Rarity rollRarity() {
         Rarity[] rarities = Rarity.values();
         int totalWeight = 0;

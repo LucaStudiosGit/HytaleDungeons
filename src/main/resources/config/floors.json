@@ -4,6 +4,7 @@
     "name": "EndPortal",
     "worldOrigin": { "x": 0, "y": 100, "z": 0 },
     "playerSpawnPoint": { "x": 19.5, "y": 210, "z": 4.5 },
+    "fallY": 202,
     "spawnGroups": [
       {
         "id": "floor_01_wave_1",
@@ -40,6 +41,7 @@
     "name": "Platform",
     "worldOrigin": { "x": 0, "y": 100, "z": 0 },
     "playerSpawnPoint": { "x": 18.5, "y": 209.5, "z": 66.5 },
+    "fallY": 205,
     "spawnGroups": [
       {
         "id": "floor_02_wave_1",

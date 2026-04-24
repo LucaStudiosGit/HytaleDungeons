@@ -12,6 +12,7 @@ public record FloorTemplate(
         int floorNumber,
         float spawnPointX, float spawnPointY, float spawnPointZ,
         int exitZoneX, int exitZoneY, int exitZoneZ, int exitZoneWidth, int exitZoneDepth,
+        int fallY,
         List<SpawnGroup> spawnGroups
 ) {
 }

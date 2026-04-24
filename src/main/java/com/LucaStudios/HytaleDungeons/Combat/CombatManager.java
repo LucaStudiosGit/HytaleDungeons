@@ -7,52 +7,30 @@ import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
-/**
- * Manages combat logic: attack cooldowns and damage calculation.
- * Bridges Hytale's native attacks to our damage pipeline.
- */
 public final class CombatManager {
 
     private final RunStateManager runStateManager;
-    private final Consumer<String> logger;
 
-    /** Per-player timestamp of last melee attack (for cooldown enforcement). */
     private final ConcurrentHashMap<UUID, Long> lastMeleeTime = new ConcurrentHashMap<>();
-
-    /** Per-player timestamp of last ranged attack (for cooldown enforcement). */
     private final ConcurrentHashMap<UUID, Long> lastRangedTime = new ConcurrentHashMap<>();
 
-    public CombatManager(RunStateManager runStateManager, Consumer<String> logger) {
+    public CombatManager(RunStateManager runStateManager) {
         this.runStateManager = runStateManager;
-        this.logger = logger;
     }
 
-    /**
-     * Check if a player can perform a melee attack right now.
-     */
     public boolean canMeleeAttack(UUID playerId, ItemDefinition weapon) {
         return canAttack(playerId, weapon, lastMeleeTime);
     }
 
-    /**
-     * Check if a player can perform a ranged attack right now.
-     */
     public boolean canRangedAttack(UUID playerId, ItemDefinition crossbow) {
         return canAttack(playerId, crossbow, lastRangedTime);
     }
 
-    /**
-     * Record that a melee attack was performed (starts melee cooldown).
-     */
     public void recordMeleeAttack(UUID playerId) {
         lastMeleeTime.put(playerId, System.currentTimeMillis());
     }
 
-    /**
-     * Record that a ranged attack was performed (starts ranged cooldown).
-     */
     public void recordRangedAttack(UUID playerId) {
         lastRangedTime.put(playerId, System.currentTimeMillis());
     }
@@ -66,36 +44,17 @@ public final class CombatManager {
 
         long now = System.currentTimeMillis();
         Long lastTime = cooldownMap.get(playerId);
-        if (lastTime != null && (now - lastTime) < item.getCooldownMs()) {
-            return false;
-        }
-
-        return true;
+        return lastTime == null || (now - lastTime) >= item.getCooldownMs();
     }
 
-    /**
-     * Calculate melee damage from the player's equipped weapon.
-     *
-     * @param playerLevel the player's current level
-     * @return damage value (floored integer)
-     */
-    public int calculateMeleeDamage(ItemDefinition weapon, int playerLevel) {
-        return weapon.getEffectiveStat(playerLevel);
+    public int calculateMeleeDamage(ItemDefinition weapon, int itemLevel) {
+        return weapon.getEffectiveStat(itemLevel);
     }
 
-    /**
-     * Calculate ranged damage from the player's equipped crossbow.
-     *
-     * @param playerLevel the player's current level
-     * @return damage value (floored integer)
-     */
-    public int calculateRangedDamage(ItemDefinition crossbow, int playerLevel) {
-        return crossbow.getEffectiveStat(playerLevel);
+    public int calculateRangedDamage(ItemDefinition crossbow, int itemLevel) {
+        return crossbow.getEffectiveStat(itemLevel);
     }
 
-    /**
-     * Clean up tracking for a disconnected player.
-     */
     public void removePlayer(UUID playerId) {
         lastMeleeTime.remove(playerId);
         lastRangedTime.remove(playerId);

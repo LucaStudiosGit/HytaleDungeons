@@ -8,6 +8,7 @@ import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.command.system.CommandManager;
 import com.hypixel.hytale.server.core.console.ConsoleSender;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatValue;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
@@ -34,24 +35,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-/**
- * Spawns enemies for a {@link SpawnGroup} using Hytale's NPC API.
- *
- * <p>For now every mob spawns as the {@code Goblin_Hermit} role; archetype rolling
- * is performed and logged so the variance logic from the Enemy AI GDD is exercised,
- * but Hytale stat overrides are not yet wired (TODO).</p>
- */
 public final class EnemyManager {
-
-//    public static final String NPC_ROLE = "Goblin_Hermit";
 
     public static final double HP_VARIANCE = 0.15;
     public static final double ATK_VARIANCE = 0.10;
 
-    /** Delay between consecutive mob spawns within a group, in milliseconds. */
-    public static final long SPAWN_STAGGER_MS = 150L;
-
-    /** Modifier key used to cap a mob's native max HP at our rolled value. */
+    public static final long MOB_SPAWN_IN_GROUP_DELAY_MS = 150L;
     private static final String MAX_HP_MODIFIER_KEY = "hytaleDungeons:rolled_max";
 
     private final RunStateManager runStateManager;
@@ -63,33 +52,13 @@ public final class EnemyManager {
         return t;
     });
 
-    /**
-     * Primary per-entity state map. Keyed by the {@link Ref} returned from
-     * {@code NPCPlugin.spawnNPC}. Populated on spawn, removed on onNativeDeath / cleanup.
-     */
-    private final Map<Ref<EntityStore>, EnemyState> states = new ConcurrentHashMap<>();
-    /** Staggered spawns still waiting to fire per player — cancelled on despawnAll. */
-    private final Map<UUID, List<ScheduledFuture<?>>> pendingByPlayer = new ConcurrentHashMap<>();
-    /** Per-player floor registration (group lookup + live counts + spawn context). */
-    private final Map<UUID, FloorRegistration> floors = new ConcurrentHashMap<>();
-    /**
-     * Per-player generation counter. Bumped on every {@link #cleanAllEntities()}
-     * and {@link #despawnAll}. Stagger-scheduled spawns capture the generation at
-     * schedule time and skip the spawn if it's stale — prevents orphan mobs when
-     * a floor regen fires while stagger spawns are still in-flight.
-     */
+    private final Map<Ref<EntityStore>, EnemyState> enemyStateMap = new ConcurrentHashMap<>();
+    private final Map<UUID, List<ScheduledFuture<?>>> pendingToSpawnByPlayer = new ConcurrentHashMap<>();
+    private final Map<UUID, FloorRegistration> floorRegistrationMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Integer> generationByPlayer = new ConcurrentHashMap<>();
 
-    /**
-     * Test seam for the chain-spawn dispatch. Invoked whenever a group's live count
-     * reaches zero and the group has a {@code nextGroupId}. Default implementation
-     * looks up the next group in the player's {@link FloorRegistration} and calls
-     * {@link #spawnGroup}. Tests can override to capture chain triggers without
-     * touching the NPC API.
-     */
     BiConsumer<UUID, SpawnGroup> chainSpawner = this::defaultChainSpawn;
 
-    /** One floor's worth of per-player state: the group registry, live counts, and spawn context. */
     static final class FloorRegistration {
         final PlayerRef playerRef;
         final World world;
@@ -115,32 +84,19 @@ public final class EnemyManager {
         this.logger = logger;
     }
 
-    /**
-     * Register all spawn groups for a player's current floor. Must be called before
-     * the first {@link #spawnGroup} for that floor so chain ({@code on_cleared})
-     * lookups and live-count tracking work. Replaces any prior registration.
-     */
     public void registerFloor(UUID playerId, PlayerRef playerRef, World world, List<SpawnGroup> groups) {
         if (playerId == null) return;
-        floors.put(playerId, new FloorRegistration(playerRef, world, groups));
+        floorRegistrationMap.put(playerId, new FloorRegistration(playerRef, world, groups));
         logger.accept("Registered floor for " + playerId + " with "
                 + (groups == null ? 0 : groups.size()) + " spawn groups");
     }
 
-    /**
-     * Test-only overload that registers a floor without a {@link PlayerRef} or
-     * {@link World}. Chain dispatch still works via the {@link #chainSpawner}
-     * seam; the default chain-spawner will no-op because the context is null.
-     * Kept here (rather than in a test helper) so tests don't need Hytale API
-     * classes on their compile classpath.
-     */
     void registerFloorForTest(UUID playerId, List<SpawnGroup> groups) {
         if (playerId == null) return;
-        floors.put(playerId, new FloorRegistration(null, null, groups));
+        floorRegistrationMap.put(playerId, new FloorRegistration(null, null, groups));
     }
 
     /**
-     * Spawn every mob defined in the given group at its world-space position.
      * Must be called from the WorldThread.
      */
     public void spawnGroup(PlayerRef playerRef, World world, SpawnGroup group) {
@@ -150,12 +106,11 @@ public final class EnemyManager {
         Ref<EntityStore> entityRef = playerRef.getReference();
         if (entityRef == null || !entityRef.isValid()) return;
         Store<EntityStore> store = entityRef.getStore();
-        if (store == null) return;
 
         final UUID playerId = playerRef.getUuid();
         final String groupId = group.id();
         final int generation = generationByPlayer.getOrDefault(playerId, 0);
-        List<ScheduledFuture<?>> pending = pendingByPlayer.computeIfAbsent(playerId, k -> new ArrayList<>());
+        List<ScheduledFuture<?>> pending = pendingToSpawnByPlayer.computeIfAbsent(playerId, k -> new ArrayList<>());
         int requested = group.totalMobCount();
         int index = 0;
         for (SpawnZone zone : group.zones()) {
@@ -173,12 +128,11 @@ public final class EnemyManager {
                 final Archetype arch = archetype;
                 final int fHp = hp;
                 final int fAtk = atk;
-                final long delayMs = (long) index * SPAWN_STAGGER_MS;
+                final long delayMs = (long) index * MOB_SPAWN_IN_GROUP_DELAY_MS;
                 index++;
 
                 ScheduledFuture<?> future = staggerScheduler.schedule(() -> world.execute(() -> {
                     if (!playerRef.isValid() || !entityRef.isValid()) return;
-                    // Generation changed — a cleanup ran after this spawn was scheduled.
                     int curGen = generationByPlayer.getOrDefault(playerId, 0);
                     if (curGen != generation) return;
                     try {
@@ -186,13 +140,8 @@ public final class EnemyManager {
                                 NPCPlugin.get().spawnNPC(store, arch.entityID, null, position, rotation);
                         if (spawned != null && spawned.left() != null) {
                             Ref<EntityStore> ref = spawned.left();
-                            states.put(ref, new EnemyState(arch, fAtk, playerId, groupId));
+                            enemyStateMap.put(ref, new EnemyState(arch, fAtk, playerId, groupId));
                             incrementLive(playerId, groupId);
-                            // Cap the mob's max HP at our rolled value via an ADDITIVE
-                            // modifier so native regen can't restore it past the roll,
-                            // then overwrite current HP so it starts at the rolled value.
-                            // The native damage pipeline drains this down to zero and
-                            // triggers death animation / kill feed / corpse removal.
                             EntityStatMap statMap = store.getComponent(ref, EntityStatMap.getComponentType());
                             if (statMap != null) {
                                 int healthIdx = DefaultEntityStatTypes.getHealth();
@@ -223,29 +172,19 @@ public final class EnemyManager {
         }
 
         logger.accept("SpawnGroup " + group.id() + " scheduling " + requested
-                + " mobs (stagger " + SPAWN_STAGGER_MS + "ms)");
+                + " mobs (stagger " + MOB_SPAWN_IN_GROUP_DELAY_MS + "ms)");
         // TODO: Track live mobs and chain nextGroup on clear (Enemy AI GDD)
     }
 
-    /**
-     * Pre-remove all tracked mobs with per-entity {@code isValid()} checks so
-     * that the subsequent {@code /entity clean} nuke has fewer targets and is
-     * less likely to crash on the parallel flock-membership race. Must be
-     * called from the <strong>world thread</strong>.
-     *
-     * @return number of entities successfully removed
-     */
     public int removeTrackedMobs() {
         int removed = 0;
-        for (Map.Entry<Ref<EntityStore>, EnemyState> e : states.entrySet()) {
+        for (Map.Entry<Ref<EntityStore>, EnemyState> e : enemyStateMap.entrySet()) {
             Ref<EntityStore> ref = e.getKey();
             if (ref == null || !ref.isValid()) continue;
             try {
                 Store<EntityStore> s = ref.getStore();
-                if (s != null) {
-                    s.removeEntity(ref, RemoveReason.REMOVE);
-                    removed++;
-                }
+                s.removeEntity(ref, RemoveReason.REMOVE);
+                removed++;
             } catch (Throwable t) {
                 // Entity already dead/removed by the native pipeline — safe to ignore.
             }
@@ -253,40 +192,22 @@ public final class EnemyManager {
         return removed;
     }
 
-    /**
-     * Cancel pending stagger spawns and clear tracking maps.
-     *
-     * <p>Previously this also ran {@code /entity clean --confirm} as a fallback
-     * nuke for untracked mobs. That crashed reliably whenever it was paired
-     * with {@link #removeTrackedMobs()} in the same world tick: our queued
-     * removals left stale {@code FlockMembershipSystems} refs that the
-     * parallel walker inside {@code EntityCleanCommand} then tripped over
-     * ({@code IllegalStateException: Invalid entity reference!}), surfacing
-     * as "An error occurred while running that command" in the invoking
-     * player's chat. Since every mob we spawn is tracked in {@link #states},
-     * {@code removeTrackedMobs()} already covers all our spawns; the only
-     * thing the nuke caught was server-restart orphans, which a dev can
-     * clean manually via the console.
-     */
     public void cleanAllEntities() {
-        // Bump generation for every known player so in-flight stagger spawns
-        // see the mismatch and skip.
         for (UUID pid : generationByPlayer.keySet()) {
             generationByPlayer.merge(pid, 1, Integer::sum);
         }
 
         int cancelled = 0;
-        for (List<ScheduledFuture<?>> list : pendingByPlayer.values()) {
+        for (List<ScheduledFuture<?>> list : pendingToSpawnByPlayer.values()) {
             for (ScheduledFuture<?> f : list) {
                 if (f.cancel(false)) cancelled++;
             }
         }
-        pendingByPlayer.clear();
-        states.clear();
-        floors.clear();
+        pendingToSpawnByPlayer.clear();
+        enemyStateMap.clear();
+        floorRegistrationMap.clear();
 
         final int cancelledFinal = cancelled;
-        // Defer ~1 tick so the CommandBuffer from removeTrackedMobs() drains first.
         staggerScheduler.schedule(() -> {
             try {
                 CommandManager.get().handleCommand(ConsoleSender.INSTANCE, "entity clean --confirm");
@@ -298,17 +219,12 @@ public final class EnemyManager {
         }, 100L, TimeUnit.MILLISECONDS);
     }
 
-    /**
-     * Cancel any pending staggered spawns and remove all live mobs previously spawned
-     * for this player. Safe to call from any thread — the actual entity removal is
-     * marshalled onto the world thread.
-     */
     public void despawnAll(UUID playerId, World world) {
         if (playerId == null) return;
 
         generationByPlayer.merge(playerId, 1, Integer::sum);
 
-        List<ScheduledFuture<?>> pending = pendingByPlayer.remove(playerId);
+        List<ScheduledFuture<?>> pending = pendingToSpawnByPlayer.remove(playerId);
         int cancelled = 0;
         if (pending != null) {
             for (ScheduledFuture<?> f : pending) {
@@ -317,16 +233,15 @@ public final class EnemyManager {
         }
 
         List<Ref<EntityStore>> toRemove = new ArrayList<>();
-        Iterator<Map.Entry<Ref<EntityStore>, EnemyState>> it = states.entrySet().iterator();
+        Iterator<Map.Entry<Ref<EntityStore>, EnemyState>> it = enemyStateMap.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<Ref<EntityStore>, EnemyState> e = it.next();
-            if (playerId.equals(e.getValue().playerId)) {
+            if (playerId.equals(e.getValue().playerId())) {
                 toRemove.add(e.getKey());
                 it.remove();
             }
         }
-        // Forget the floor registration so chained spawns don't fire after cleanup.
-        floors.remove(playerId);
+        floorRegistrationMap.remove(playerId);
 
         if (toRemove.isEmpty() && cancelled == 0) return;
 
@@ -343,7 +258,6 @@ public final class EnemyManager {
                 if (ref == null || !ref.isValid()) continue;
                 try {
                     Store<EntityStore> s = ref.getStore();
-                    if (s == null) continue;
                     s.removeEntity(ref, RemoveReason.REMOVE);
                     removed++;
                 } catch (Throwable t) {
@@ -356,59 +270,81 @@ public final class EnemyManager {
         });
     }
 
-    // ── Damage / Death (Enemy AI GDD §3) ────────────────────────────────
-
-    /** Look up the state for an entity, or {@code null} if not tracked. */
     public EnemyState getState(Ref<EntityStore> ref) {
-        return (ref == null) ? null : states.get(ref);
+        return (ref == null) ? null : enemyStateMap.get(ref);
     }
 
     /**
-     * Called by {@link MobDeathObserver} when the native pipeline has added a
-     * {@code DeathComponent} to one of our tracked mobs. Clears our state,
-     * decrements the live count, fires chain spawns, and notifies
-     * {@link RunStateManager#onMobKilled}. The native corpse removal system
-     * handles the actual entity cleanup.
+     * Remove any mob belonging to {@code playerId} whose y-position has
+     * dropped below {@code fallY}. Must be called on the world thread.
+     *
+     * <p>Fallen mobs are silently despawned via {@code removeEntity}, then
+     * routed through {@link #onNativeDeath} so the floor's live-mob counter
+     * decrements and chain-spawn / floor-clear logic still fire. Loot is
+     * intentionally NOT granted — the native damage pipeline is bypassed.</p>
      */
+    public void killFallenMobs(UUID playerId, int fallY) {
+        if (playerId == null) return;
+        List<Ref<EntityStore>> fallen = new ArrayList<>();
+        for (Map.Entry<Ref<EntityStore>, EnemyState> entry : enemyStateMap.entrySet()) {
+            if (!playerId.equals(entry.getValue().playerId())) continue;
+            Ref<EntityStore> ref = entry.getKey();
+            if (ref == null || !ref.isValid()) continue;
+            try {
+                Store<EntityStore> store = ref.getStore();
+                TransformComponent tc = store.getComponent(ref, TransformComponent.getComponentType());
+                if (tc == null) continue;
+                double y = tc.getTransform().getPosition().y;
+                if (y < fallY) fallen.add(ref);
+            } catch (Throwable t) {
+                // Bad ECS read during archetype transition — skip this tick.
+            }
+        }
+        if (fallen.isEmpty()) return;
+
+        for (Ref<EntityStore> ref : fallen) {
+            try {
+                Store<EntityStore> s = ref.getStore();
+                s.removeEntity(ref, RemoveReason.REMOVE);
+            } catch (Throwable t) {
+                // Already removed by native pipeline — safe to ignore.
+            }
+            onNativeDeath(ref);
+        }
+        logger.accept(String.format("Killed %d fallen mob(s) for %s (fallY=%d)",
+                fallen.size(), playerId, fallY));
+    }
+
     public void onNativeDeath(Ref<EntityStore> ref) {
         if (ref == null) return;
-        EnemyState state = states.remove(ref);
+        EnemyState state = enemyStateMap.remove(ref);
         if (state == null) return;
 
         logger.accept(String.format("Killed mob [%s] group=%s for %s",
-                state.archetype.name(), state.groupId, state.playerId));
+                state.archetype().name(), state.groupId(), state.playerId()));
 
-        onMobDied(state.playerId, state.groupId);
+        onMobDied(state.playerId(), state.groupId());
 
         if (runStateManager != null) {
-            runStateManager.onMobKilled(state.playerId);
+            runStateManager.onMobKilled(state.playerId());
         }
     }
 
-    /**
-     * Increment the live-mob counter for a (player, group). Called when a spawn
-     * lands; also used by tests to seed state without touching the NPC API.
-     */
     void incrementLive(UUID playerId, String groupId) {
-        FloorRegistration reg = floors.get(playerId);
+        FloorRegistration reg = floorRegistrationMap.get(playerId);
         if (reg == null || groupId == null) return;
         reg.liveByGroupId.merge(groupId, 1, Integer::sum);
     }
 
-    /** Current live count for a (player, group), or 0 if unknown. */
     public int getLiveCount(UUID playerId, String groupId) {
-        FloorRegistration reg = floors.get(playerId);
+        FloorRegistration reg = floorRegistrationMap.get(playerId);
         if (reg == null || groupId == null) return 0;
         Integer n = reg.liveByGroupId.get(groupId);
         return n == null ? 0 : n;
     }
 
-    /**
-     * Decrement a group's live count. If it reaches 0 and the group has a
-     * {@code nextGroupId}, dispatch the chain via {@link #chainSpawner}.
-     */
     void onMobDied(UUID playerId, String groupId) {
-        FloorRegistration reg = floors.get(playerId);
+        FloorRegistration reg = floorRegistrationMap.get(playerId);
         if (reg == null || groupId == null) return;
 
         Integer current = reg.liveByGroupId.get(groupId);
@@ -436,7 +372,7 @@ public final class EnemyManager {
     }
 
     private void defaultChainSpawn(UUID playerId, SpawnGroup nextGroup) {
-        FloorRegistration reg = floors.get(playerId);
+        FloorRegistration reg = floorRegistrationMap.get(playerId);
         if (reg == null || reg.playerRef == null || reg.world == null) {
             logger.accept("Cannot chain-spawn " + nextGroup.id()
                     + ": missing player/world context");
@@ -462,7 +398,7 @@ public final class EnemyManager {
     }
 
     private int rollWithVariance(int base, double variance) {
-        double mult = 1.0 + (random.nextDouble() * 2.0 - 1.0) * variance;
-        return Math.max(1, (int) Math.round(base * mult));
+        double multiply = 1.0 + (random.nextDouble() * 2.0 - 1.0) * variance;
+        return Math.max(1, (int) Math.round(base * multiply));
     }
 }

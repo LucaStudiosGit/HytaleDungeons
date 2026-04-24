@@ -2,7 +2,6 @@ package com.LucaStudios.HytaleDungeons.Debug;
 
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorData;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorGenerator;
-import com.LucaStudios.HytaleDungeons.FloorGen.PlacedRoom;
 import com.LucaStudios.HytaleDungeons.Run.RunData;
 import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
 import com.hypixel.hytale.component.Ref;
@@ -64,14 +63,14 @@ public final class DebugCommands {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("--- Floor ").append(floor.getFloorNumber()).append(" ---\n");
+        sb.append("--- Floor ").append(floor.floorNumber()).append(" ---\n");
 //        sb.append("Rooms: ").append(floor.getRooms().size()).append("\n");
 //        sb.append("Origin: (").append(floor.getOriginX()).append(", ")
 //                .append(floor.getOriginY()).append(", ").append(floor.getOriginZ()).append(")\n");
 //        sb.append("Total size: ").append(floor.getTotalSizeX()).append("x")
 //                .append(floor.getTotalSizeY()).append("x").append(floor.getTotalSizeZ()).append("\n");
 
-        float[] sp = floor.getPlayerSpawnPoint();
+        float[] sp = floor.playerSpawnPoint();
         sb.append("Spawn: (").append(sp[0]).append(", ").append(sp[1]).append(", ").append(sp[2]).append(")\n");
 
 //        int[] ez = floor.getExitZoneOrigin();

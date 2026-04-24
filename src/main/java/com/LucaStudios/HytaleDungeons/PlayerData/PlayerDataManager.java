@@ -25,7 +25,7 @@ public final class PlayerDataManager {
     public static final int BACKPACK_SIZE = 9;
 
     /** Default equipped item IDs for a new run. */
-    public static final String DEFAULT_WEAPON = "iron_sword";
+    public static final String DEFAULT_WEAPON = "wood_sword";
     public static final String DEFAULT_CROSSBOW = "iron_crossbow";
     public static final String DEFAULT_ARMOR = null; // no armor
 
@@ -166,6 +166,36 @@ public final class PlayerDataManager {
         PlayerLoadout loadout = players.get(playerId);
         if (loadout == null) return false;
         return loadout.equipFromBackpack(backpackSlot);
+    }
+
+    /**
+     * Replace the equipped item in the slot matching the given item's category,
+     * recording its rolled instance level. The previous equipped item is
+     * discarded (not moved to the backpack). Callers are responsible for
+     * mirroring the change to the Hytale hotbar.
+     */
+    public void replaceEquippedForCategory(UUID playerId, String itemId, int itemLevel) {
+        PlayerLoadout loadout = players.get(playerId);
+        if (loadout == null) return;
+        loadout.setEquippedForCategory(itemId, itemLevel);
+    }
+
+    /** Get the level of the player's currently equipped weapon (1 if none). */
+    public int getEquippedWeaponLevel(UUID playerId) {
+        PlayerLoadout loadout = players.get(playerId);
+        return loadout != null ? loadout.getEquippedWeaponLevel() : 1;
+    }
+
+    /** Get the level of the player's currently equipped armor (1 if none). */
+    public int getEquippedArmorLevel(UUID playerId) {
+        PlayerLoadout loadout = players.get(playerId);
+        return loadout != null ? loadout.getEquippedArmorLevel() : 1;
+    }
+
+    /** Get the level of the player's currently equipped crossbow (1 if none). */
+    public int getEquippedCrossbowLevel(UUID playerId) {
+        PlayerLoadout loadout = players.get(playerId);
+        return loadout != null ? loadout.getEquippedCrossbowLevel() : 1;
     }
 
     /**

@@ -4,14 +4,16 @@ import com.LucaStudios.HytaleDungeons.Loot.ItemDatabase;
 import com.LucaStudios.HytaleDungeons.Loot.ItemDefinition;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3i;
 import com.hypixel.hytale.protocol.MouseButtonState;
 import com.hypixel.hytale.protocol.MouseButtonType;
 import com.hypixel.hytale.server.core.entity.Entity;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerMouseButtonEvent;
-import com.hypixel.hytale.server.core.inventory.Inventory;
+import com.hypixel.hytale.server.core.inventory.InventoryComponent;
 import com.hypixel.hytale.server.core.inventory.container.ItemContainer;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
@@ -90,7 +92,6 @@ public final class RightClickCrossbowHandler {
 
         UUID playerId = playerRef.getUuid();
 
-        // Cooldown check — block the shot entirely if on cooldown
         ItemDefinition crossbow = ItemDatabase.getInstance().getByHytaleId(LOADED_CROSSBOW_ITEM_ID);
         if (!combatManager.canRangedAttack(playerId, crossbow)) return;
 
@@ -102,15 +103,17 @@ public final class RightClickCrossbowHandler {
         Player player = store.getComponent(entityRef, Player.getComponentType());
         if (player == null) return;
 
-        Inventory inventory = player.getInventory();
-        if (inventory == null) return;
+        InventoryComponent.Hotbar hotbar = store.getComponent(entityRef, InventoryComponent.Hotbar.getComponentType());
+        InventoryComponent.Storage storage = store.getComponent(entityRef, InventoryComponent.Storage.getComponentType());
+        InventoryComponent.Backpack backpack = store.getComponent(entityRef, InventoryComponent.Backpack.getComponentType());
+        if (hotbar == null) return;
 
-        if (!consumeArrow(inventory)) return;
+        if (!consumeArrow(hotbar, storage, backpack)) return;
 
-        savedSlot0Items.putIfAbsent(playerId, getSlot0Snapshot(inventory));
+        savedSlot0Items.putIfAbsent(playerId, getSlot0Snapshot(hotbar));
 
-        inventory.getHotbar().setItemStackForSlot(FIRING_SLOT, new ItemStack(LOADED_CROSSBOW_ITEM_ID));
-        inventory.setActiveHotbarSlot(entityRef, (byte) FIRING_SLOT, store);
+        hotbar.getInventory().setItemStackForSlot(FIRING_SLOT, new ItemStack(LOADED_CROSSBOW_ITEM_ID));
+        hotbar.setActiveSlot((byte) FIRING_SLOT);
 
         EntityStatMap entityStats = store.getComponent(entityRef, EntityStatMap.getComponentType());
         if (entityStats != null) {
@@ -127,28 +130,26 @@ public final class RightClickCrossbowHandler {
         scheduleRestore(playerRef);
     }
 
-    /** Center-mass offset for entity targeting (roughly chest height). */
     private static final double AIM_CENTER_MASS_Y = 1.0;
 
     private Vector3d resolveAimTarget(Entity targetEntity, Vector3i targetBlock,
                                       double shooterEyeY) {
-        if (targetEntity != null && targetEntity.getTransformComponent() != null) {
-            Vector3d pos = targetEntity.getTransformComponent().getTransform().getPosition();
-            // Aim at center mass, not feet
-            return new Vector3d(pos.x, pos.y + AIM_CENTER_MASS_Y, pos.z);
+        if (targetEntity != null && targetEntity.getReference() != null && targetEntity.getReference().isValid()) {
+            Ref<EntityStore> targetRef = targetEntity.getReference();
+            TransformComponent tc = targetRef.getStore().getComponent(targetRef, TransformComponent.getComponentType());
+            if (tc != null) {
+                Vector3d pos = tc.getTransform().getPosition();
+                return new Vector3d(pos.x, pos.y + AIM_CENTER_MASS_Y, pos.z);
+            }
         }
-
         if (targetBlock != null) {
-            // Block target is usually the floor — shoot horizontally at eye
-            // height so arrows don't dive into the ground.
             return new Vector3d(targetBlock.x + 0.5, shooterEyeY, targetBlock.z + 0.5);
         }
-
         return null;
     }
 
-    private ItemStack getSlot0Snapshot(Inventory inventory) {
-        ItemStack itemStack = inventory.getHotbar().getItemStack(FIRING_SLOT);
+    private ItemStack getSlot0Snapshot(InventoryComponent.Hotbar hotbar) {
+        ItemStack itemStack = hotbar.getInventory().getItemStack(FIRING_SLOT);
         return itemStack == null ? ItemStack.EMPTY : itemStack;
     }
 
@@ -161,21 +162,21 @@ public final class RightClickCrossbowHandler {
         ProjectileConfig projectileConfig = ProjectileConfig.getAssetMap().getAsset(CROSSBOW_PROJECTILE_CONFIG_ID);
         if (projectileConfig == null) return;
 
-        var transform = playerRef.getTransform();
+        Transform transform = playerRef.getTransform();
 
         Vector3d position = transform.getPosition().clone();
 
         double dx = aimTarget.x - position.x;
         double dz = aimTarget.z - position.z;
-        double horizDist = Math.sqrt(dx * dx + dz * dz);
-        if (horizDist < 0.001) return;
+        double horizonDist = Math.sqrt(dx * dx + dz * dz);
+        if (horizonDist < 0.001) return;
 
-        double dirX = dx / horizDist;
-        double dirZ = dz / horizDist;
+        double dirX = dx / horizonDist;
+        double dirZ = dz / horizonDist;
         double dy = aimTarget.y - (position.y + 1.5);
 
         float yaw = (float) Math.atan2(-dirX, dirZ);
-        float pitch = (float) Math.atan2(dy, horizDist);
+        float pitch = (float) Math.atan2(dy, horizonDist);
 
         Vector3d spawnOffset = projectileConfig.getCalculatedOffset(yaw, pitch);
         Vector3d spawnPosition = position.add(spawnOffset).add(0.0, 1.5, 0.0);
@@ -198,10 +199,12 @@ public final class RightClickCrossbowHandler {
         });
     }
 
-    private boolean consumeArrow(Inventory inventory) {
-        return tryConsumeArrowFrom(inventory.getHotbar())
-                || tryConsumeArrowFrom(inventory.getStorage())
-                || tryConsumeArrowFrom(inventory.getBackpack());
+    private boolean consumeArrow(InventoryComponent.Hotbar hotbar,
+                                  InventoryComponent.Storage storage,
+                                  InventoryComponent.Backpack backpack) {
+        return tryConsumeArrowFrom(hotbar != null ? hotbar.getInventory() : null)
+                || tryConsumeArrowFrom(storage != null ? storage.getInventory() : null)
+                || tryConsumeArrowFrom(backpack != null ? backpack.getInventory() : null);
     }
 
     private boolean tryConsumeArrowFrom(ItemContainer container) {
@@ -259,14 +262,14 @@ public final class RightClickCrossbowHandler {
             Player player = store.getComponent(entityRef, Player.getComponentType());
             if (player == null) return;
 
-            Inventory inventory = player.getInventory();
-            if (inventory == null) return;
+            InventoryComponent.Hotbar hotbar = store.getComponent(entityRef, InventoryComponent.Hotbar.getComponentType());
+            if (hotbar == null) return;
 
             ItemStack originalItem = savedSlot0Items.get(playerId);
             if (originalItem == null || originalItem.isEmpty()) {
-                inventory.getHotbar().removeItemStackFromSlot(FIRING_SLOT);
+                hotbar.getInventory().removeItemStackFromSlot(FIRING_SLOT);
             } else {
-                inventory.getHotbar().setItemStackForSlot(FIRING_SLOT, originalItem);
+                hotbar.getInventory().setItemStackForSlot(FIRING_SLOT, originalItem);
             }
 
             EntityStatMap entityStats = store.getComponent(entityRef, EntityStatMap.getComponentType());

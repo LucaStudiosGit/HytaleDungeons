@@ -68,6 +68,11 @@ public final class FloorTemplateLibrary {
         float spawnY = spawn.get("y").getAsFloat();
         float spawnZ = spawn.get("z").getAsFloat();
 
+        if (!obj.has("fallY")) {
+            throw new IllegalArgumentException("Floor " + floorNumber + " is missing required 'fallY'");
+        }
+        int fallY = obj.get("fallY").getAsInt();
+
         List<SpawnGroup> spawnGroups = new ArrayList<>();
         JsonArray groupsJson = obj.getAsJsonArray("spawnGroups");
         if (groupsJson != null) {
@@ -77,7 +82,7 @@ public final class FloorTemplateLibrary {
         }
 
         return new FloorTemplate(floorNumber, spawnX, spawnY, spawnZ,
-                0, 0, 0, 0, 0, Collections.unmodifiableList(spawnGroups));
+                0, 0, 0, 0, 0, fallY, Collections.unmodifiableList(spawnGroups));
     }
 
     private static SpawnGroup parseSpawnGroup(JsonObject obj) {
@@ -115,6 +120,7 @@ public final class FloorTemplateLibrary {
                 1,
                 16, 8, 16,
                 0, 0, 0, 0, 0,
+                Integer.MIN_VALUE,
                 List.of()
         ));
         return new FloorTemplateLibrary(floors);

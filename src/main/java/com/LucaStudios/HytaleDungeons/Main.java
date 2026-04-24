@@ -10,9 +10,13 @@ import com.LucaStudios.HytaleDungeons.FloorGen.FloorTemplateLibrary;
 import com.LucaStudios.HytaleDungeons.Health.HealthManager;
 import com.LucaStudios.HytaleDungeons.Loot.ItemDatabase;
 import com.LucaStudios.HytaleDungeons.PlayerData.PlayerDataManager;
+import com.LucaStudios.HytaleDungeons.Restrictions.NoNaturalSpawnRestriction;
 import com.LucaStudios.HytaleDungeons.Restrictions.PlayerRestrictions;
+import com.LucaStudios.HytaleDungeons.Run.RunData;
+import com.LucaStudios.HytaleDungeons.Run.RunState;
 import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
 import com.LucaStudios.HytaleDungeons.UI.GameHud;
+import com.LucaStudios.HytaleDungeons.UI.LobbyConfig;
 import com.LucaStudios.HytaleDungeons.UI.MainMenuPage;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
@@ -66,6 +70,7 @@ public class Main extends JavaPlugin {
 
         ItemDatabase.load(msg -> getLogger().at(Level.INFO).log(msg));
         FloorTemplateLibrary.load(msg -> getLogger().at(Level.INFO).log(msg));
+        LobbyConfig.load(msg -> getLogger().at(Level.INFO).log(msg));
 
         registerEvents();
         registerCommands();
@@ -98,15 +103,32 @@ public class Main extends JavaPlugin {
         runStateManager.setHealthManager(healthManager);
         runStateManager.setPlayerDataManager(playerDataManager);
         runStateManager.setFloorGenerator(floorGenerator);
+
+        // Fall damage — deal 10% max HP and teleport back to spawn, or trigger
+        // the death flow if lethal. Only while actively on a floor.
+        floorGenerator.setOnPlayerFell((playerId, playerRef) -> {
+            RunData data = runStateManager.getRunData(playerId);
+            if (data == null || data.getState() != RunState.FLOOR_ACTIVE) return;
+            boolean lethal = healthManager.applyEnvironmentalDamage(playerId, 0.10f);
+            if (lethal) {
+                runStateManager.onPlayerDeath(playerId, playerRef);
+            } else {
+                floorGenerator.teleportToActiveFloorSpawn(playerId, playerRef);
+            }
+        });
         runStateManager.setDeathPage(new com.LucaStudios.HytaleDungeons.UI.DeathPage());
         // GameOverPage needs MainMenuPage to implement the "Lobby" button —
         // construct the menu up front here and register it below.
         MainMenuPage mainMenuPage = new MainMenuPage(this);
+        mainMenuPage.setRunStateManager(runStateManager);
         runStateManager.setGameOverPage(
                 new com.LucaStudios.HytaleDungeons.UI.GameOverPage(runStateManager, mainMenuPage));
+        runStateManager.setBetweenFloorsPage(
+                new com.LucaStudios.HytaleDungeons.UI.BetweenFloorsPage(runStateManager, playerDataManager));
+        runStateManager.setVictoryPage(
+                new com.LucaStudios.HytaleDungeons.UI.VictoryPage(runStateManager, mainMenuPage));
         // Combat system — cooldowns, damage calculation
-        combatManager = new CombatManager(runStateManager,
-                msg -> getLogger().at(Level.INFO).log(msg));
+        combatManager = new CombatManager(runStateManager);
 
         // ECS damage interceptor — rewrites player↔mob damage with our formulas
         // and hands off to the native pipeline for HP / FX / death.
@@ -141,6 +163,9 @@ public class Main extends JavaPlugin {
         new com.LucaStudios.HytaleDungeons.Health.PotionKeyHandler(healthManager).register();
 
         new PlayerRestrictions(this).register();
+
+        // Disable Hytale's natural NPC spawning — only our EnemyManager spawns mobs.
+        new NoNaturalSpawnRestriction(this).register();
 
         // Epic A — main menu modal page on join
         mainMenuPage.register();
