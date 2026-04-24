@@ -254,11 +254,19 @@ public final class EnemyManager {
     }
 
     /**
-     * Cancel pending stagger spawns, clear tracking maps, and run Hytale's
-     * {@code /entity clean --confirm} as a fallback nuke for mobs our tracking
-     * doesn't know about (e.g. survived a server restart). Call
-     * {@link #removeTrackedMobs()} on the world thread <em>before</em> this
-     * method to avoid the parallel-removal race in the engine's clean command.
+     * Cancel pending stagger spawns and clear tracking maps.
+     *
+     * <p>Previously this also ran {@code /entity clean --confirm} as a fallback
+     * nuke for untracked mobs. That crashed reliably whenever it was paired
+     * with {@link #removeTrackedMobs()} in the same world tick: our queued
+     * removals left stale {@code FlockMembershipSystems} refs that the
+     * parallel walker inside {@code EntityCleanCommand} then tripped over
+     * ({@code IllegalStateException: Invalid entity reference!}), surfacing
+     * as "An error occurred while running that command" in the invoking
+     * player's chat. Since every mob we spawn is tracked in {@link #states},
+     * {@code removeTrackedMobs()} already covers all our spawns; the only
+     * thing the nuke caught was server-restart orphans, which a dev can
+     * clean manually via the console.
      */
     public void cleanAllEntities() {
         // Bump generation for every known player so in-flight stagger spawns
@@ -277,13 +285,17 @@ public final class EnemyManager {
         states.clear();
         floors.clear();
 
-        try {
-            CommandManager.get().handleCommand(ConsoleSender.INSTANCE, "entity clean --confirm");
-            logger.accept("Ran /entity clean --confirm (cancelled " + cancelled + " pending spawns)");
-        } catch (Throwable t) {
-            logger.accept("Failed to run /entity clean: "
-                    + t.getClass().getSimpleName() + ": " + t.getMessage());
-        }
+        final int cancelledFinal = cancelled;
+        // Defer ~1 tick so the CommandBuffer from removeTrackedMobs() drains first.
+        staggerScheduler.schedule(() -> {
+            try {
+                CommandManager.get().handleCommand(ConsoleSender.INSTANCE, "entity clean --confirm");
+                logger.accept("Ran /entity clean --confirm (cancelled " + cancelledFinal + " pending spawns)");
+            } catch (Throwable t) {
+                logger.accept("Failed to run /entity clean: "
+                        + t.getClass().getSimpleName() + ": " + t.getMessage());
+            }
+        }, 100L, TimeUnit.MILLISECONDS);
     }
 
     /**
