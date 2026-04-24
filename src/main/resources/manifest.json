@@ -2,6 +2,7 @@
     "Group": "LucaStudios",
     "Name": "HytaleDungeons",
     "Version": "0.0.2",
+    "ServerVersion": "2026.03.26-89796e57b",
     "Authors": [
         {
             "Name": "Omer Behar"
@@ -10,7 +11,7 @@
             "Name": "Itamar Behar"
         }
     ],
-    "Website": "https://lucastudios.com",
+    "Website": "lucastudios.com",
     "Dependencies": {
         
     },
