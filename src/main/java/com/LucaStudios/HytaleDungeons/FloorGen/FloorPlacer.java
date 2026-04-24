@@ -84,18 +84,7 @@ public final class FloorPlacer {
                 new Vector3d(x, y, z),
                 new Vector3f(0f, 0f, 0f)
         );
-        // isValid() can return true while the entity's archetype slot is mid-
-        // transition (e.g. right after death). addComponent may then blow up
-        // deep inside ArchetypeChunk.removeEntity — swallow and log instead of
-        // taking down the world thread.
-        try {
-            store.addComponent(entityRef, Teleport.getComponentType(), teleport);
-        } catch (Throwable t) {
-            logger.accept(String.format(
-                    "teleportPlayer: addComponent(Teleport) failed — %s: %s",
-                    t.getClass().getSimpleName(), t.getMessage()));
-            return;
-        }
+        store.addComponent(entityRef, Teleport.getComponentType(), teleport);
 
         logger.accept(String.format("Teleported player to (%f, %f, %f)", x, y, z));
     }

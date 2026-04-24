@@ -108,15 +108,7 @@ public class Main extends JavaPlugin {
         // the death flow if lethal. Only while actively on a floor.
         floorGenerator.setOnPlayerFell((playerId, playerRef) -> {
             RunData data = runStateManager.getRunData(playerId);
-            if (data == null) return;
-            // Always teleport the body back to spawn — even a DEAD corpse.
-            // If we don't, the corpse tumbles past the world bottom and
-            // Hytale's native world-bottom cleanup corrupts the entity,
-            // breaking every subsequent ECS op on the player.
-            if (data.getState() != RunState.FLOOR_ACTIVE) {
-                floorGenerator.teleportToActiveFloorSpawn(playerId, playerRef);
-                return;
-            }
+            if (data == null || data.getState() != RunState.FLOOR_ACTIVE) return;
             boolean lethal = healthManager.applyEnvironmentalDamage(playerId, 0.10f);
             if (lethal) {
                 runStateManager.onPlayerDeath(playerId, playerRef);
