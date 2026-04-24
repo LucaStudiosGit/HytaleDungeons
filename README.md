@@ -24,16 +24,16 @@ Simple to learn, hard to master, impossible to put down.
 - **3-life system** — die and retry the current floor; lose all three and your run ends
 - **One upgrade per floor** — pick 1 of 3 gear drops (weapon, armor, or bow) each floor
 - **Escalating difficulty** — deeper floors bring more mobs, tougher variants, and new enemy types
-- **Persistent HUD** — always know your floor, lives, and equipped gear at a glance
 
 ---
 
 ## How to play
 
 1. Join a server / world with that mod installed
-2. Fight through every room, reach the floor exit
+2. Start a run
+2. Fight through every floor, kill all the monsters
 3. Pick your gear upgrade
-4. Repeat until you die — then try to beat your depth
+4. Repeat until you die — or win the run
 
 ---
 
@@ -49,23 +49,20 @@ Simple to learn, hard to master, impossible to put down.
 
 ## Known Issues
 
-When you loose all your lifes, restart the world, some bugs...
-When you dies, if you press respawn its the same bug 👆🏻 restart tge world.
-If you fall down, go to creative or restart the game, it would be fixed.
 The mob drops are not intentional
 
 ---
 
-## For Instructors
+## Some Instructions
 
-When you die, dont press respawn, it auto respawns you.
-When you press on the discord button in the start screen, the link is sent in the chat.
+- When you press on the discord button in the start screen, the link is sent in the chat
+- Press the "4" bounded key to drink a health potion
+
 
 ---
 
 ## Credits
 
-- **LucaStudios** — design & development
 - **Omer behar** - lead developer
 - **Itamar behar** - builder, art and some code
 
@@ -74,3 +71,5 @@ When you press on the discord button in the start screen, the link is sent in th
 ## Links
 
 - [Discord / Community](https://discord.gg/EVvWuRfb)
+- [Website](https://lucastudios.com)
+- [Github](https://github.com/lucastudiosgit)

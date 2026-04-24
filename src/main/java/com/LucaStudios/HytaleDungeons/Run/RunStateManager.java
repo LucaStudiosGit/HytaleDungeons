@@ -19,8 +19,10 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
+import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
@@ -696,6 +698,15 @@ public final class RunStateManager {
             return;
         }
 
+        // Re-resolve the PlayerRef from Universe — the ref we captured at
+        // death time is stale because the native respawn pipeline moves the
+        // entity between archetype chunks in the 3s death-screen window.
+        PlayerRef freshRef = resolveFreshPlayerRef(playerId);
+        if (freshRef != null) {
+            playerRef = freshRef;
+            data.setPlayerRef(freshRef);
+        }
+
         if (data.getLivesRemaining() > 0) {
             // Respawn on same floor
             data.decrementLives();
@@ -709,7 +720,8 @@ public final class RunStateManager {
             // regenerate the floor (same as !regen), and re-snap the top-down camera.
             World world = worldFromPlayerRef(playerRef);
             if (world != null) {
-                world.execute(() -> revivePlayer(playerId, playerRef));
+                final PlayerRef reviveRef = playerRef;
+                world.execute(() -> revivePlayer(playerId, reviveRef));
             }
         } else {
             // Game over
@@ -779,12 +791,40 @@ public final class RunStateManager {
      * behavior as {@code !regen}), and re-enable the top-down camera.
      */
     private void revivePlayer(UUID playerId, PlayerRef playerRef) {
+        revivePlayer(playerId, playerRef, 0);
+    }
+
+    private static final int MAX_REVIVE_RETRIES = 3;
+    private static final long REVIVE_RETRY_DELAY_MS = 100L;
+
+    private void revivePlayer(UUID playerId, PlayerRef playerRef, int attempt) {
         if (playerRef == null || !playerRef.isValid()) return;
         Ref<EntityStore> entityRef = playerRef.getReference();
         if (entityRef == null || !entityRef.isValid()) return;
         Store<EntityStore> store = entityRef.getStore();
 
+        // The native death flow may still be moving the player between
+        // archetypes for a tick or two after death — isValid() returns true
+        // but ECS reads/writes blow up with IndexOutOfBoundsException deep
+        // inside ArchetypeChunk. If that happens, back off and retry on a
+        // later tick so the archetype settles before we touch it.
+        if (!isEntitySettled(entityRef, store)) {
+            if (attempt < MAX_REVIVE_RETRIES) {
+                scheduler.schedule(() -> {
+                    World world = worldFromPlayerRef(playerRef);
+                    if (world != null) {
+                        world.execute(() -> revivePlayer(playerId, playerRef, attempt + 1));
+                    }
+                }, REVIVE_RETRY_DELAY_MS, TimeUnit.MILLISECONDS);
+                return;
+            }
+            log("revivePlayer: entity still not settled after %d attempts — proceeding best-effort for %s",
+                    MAX_REVIVE_RETRIES, playerId);
+        }
+
         // Clear the native death component so the player is "alive" again.
+        // The native flow may have already removed it during archetype
+        // transitions, so a "not in archetype" failure here is benign.
         try {
             store.removeComponent(entityRef, DeathComponent.getComponentType());
         } catch (Throwable t) {
@@ -794,11 +834,21 @@ public final class RunStateManager {
 
         // Refill HP (writes native HEALTH stat back to MAX_HP).
         if (healthManager != null) {
-            healthManager.resetHealth(playerId);
+            try {
+                healthManager.resetHealth(playerId);
+            } catch (Throwable t) {
+                log("revivePlayer: resetHealth failed for %s: %s",
+                        playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+            }
         }
 
         // Re-snap the top-down camera.
-        TopDownView.enable(playerRef);
+        try {
+            TopDownView.enable(playerRef);
+        } catch (Throwable t) {
+            log("revivePlayer: TopDownView.enable failed for %s: %s",
+                    playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+        }
 
         // Full floor regen — despawn old mobs, rebuild geometry, re-spawn mobs,
         // teleport to floor spawn. Mirrors what DebugCommands !regen does.
@@ -806,12 +856,35 @@ public final class RunStateManager {
             RunData data = runs.get(playerId);
             int floor = (data != null) ? data.getCurrentFloor() : STARTING_FLOOR;
             World world = store.getExternalData().getWorld();
-            floorGenerator.generateFloor(playerId, floor, world, playerRef, () -> {
-                FloorData floorData = floorGenerator.getActiveFloor(playerId);
-                if (floorData != null && data != null) {
-                    data.setMobsRemaining(floorData.getMobSpawnCount());
-                }
-            });
+            try {
+                floorGenerator.generateFloor(playerId, floor, world, playerRef, () -> {
+                    FloorData floorData = floorGenerator.getActiveFloor(playerId);
+                    if (floorData != null && data != null) {
+                        data.setMobsRemaining(floorData.getMobSpawnCount());
+                    }
+                });
+            } catch (Throwable t) {
+                log("revivePlayer: generateFloor failed for %s: %s",
+                        playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Probe whether an entity can safely accept ECS reads/writes right now.
+     * Returns false when the entity is mid archetype-transition — isValid()
+     * still returns true in that window, but store operations throw
+     * IndexOutOfBoundsException inside ArchetypeChunk.
+     */
+    private boolean isEntitySettled(Ref<EntityStore> entityRef, Store<EntityStore> store) {
+        if (entityRef == null || !entityRef.isValid() || store == null) return false;
+        try {
+            // Any cheap read that walks the archetype chunk will throw if the
+            // entity's slot is not yet consistent.
+            store.getComponent(entityRef, PlayerRef.getComponentType());
+            return true;
+        } catch (Throwable t) {
+            return false;
         }
     }
 

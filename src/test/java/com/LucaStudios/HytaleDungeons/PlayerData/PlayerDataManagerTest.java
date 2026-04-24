@@ -95,10 +95,10 @@ class PlayerDataManagerTest {
     // ── Equipped Gear ───────────────────────────────────────────────────
 
     @Test
-    void getEquippedWeapon_returnsIronSword() {
+    void getEquippedWeapon_returnsDefaultWeapon() {
         manager.initPlayer(PLAYER_ID);
         ItemDefinition weapon = manager.getEquippedWeapon(PLAYER_ID);
-        assertEquals("iron_sword", weapon.getId());
+        assertEquals(PlayerDataManager.DEFAULT_WEAPON, weapon.getId());
     }
 
     @Test
@@ -128,8 +128,7 @@ class PlayerDataManagerTest {
 
         assertTrue(manager.equipItem(PLAYER_ID, 0));
         assertEquals("mithril_sword", manager.getEquippedWeapon(PLAYER_ID).getId());
-        // iron_sword should now be in backpack
-        assertTrue(manager.getBackpackItems(PLAYER_ID).contains("iron_sword"));
+        assertTrue(manager.getBackpackItems(PLAYER_ID).contains(PlayerDataManager.DEFAULT_WEAPON));
     }
 
     @Test
