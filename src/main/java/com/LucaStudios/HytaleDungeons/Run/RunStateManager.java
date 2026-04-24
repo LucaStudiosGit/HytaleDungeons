@@ -185,12 +185,43 @@ public final class RunStateManager {
             Ref<EntityStore> entityRef = playerRef.getReference();
             if (entityRef != null && entityRef.isValid()) {
                 Store<EntityStore> store = entityRef.getStore();
-                try {
-                    deathPage.showFor(playerRef, store, DEATH_SCREEN_DURATION_MS,
-                            Math.max(0, data.getLivesRemaining() - 1));
-                } catch (Throwable t) {
+                if (store == null) {
                     plugin.getLogger().at(Level.WARNING).log(
-                            "DeathPage.showFor failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+                            "DeathPage: entityRef.getStore() returned null for player " + playerId);
+                } else {
+                    log("Showing death page for player %s with %d lives remaining",
+                            playerId, Math.max(0, data.getLivesRemaining() - 1));
+                    final int livesRemaining = Math.max(0, data.getLivesRemaining() - 1);
+                    World world = store.getExternalData().getWorld();
+                    final com.LucaStudios.HytaleDungeons.UI.DeathPage deathPageRef = deathPage;
+                    world.execute(() -> {
+                        // Cancel Hytale's native respawn: removing DeathComponent prevents the
+                        // engine from teleporting the player to its default spawn point, which
+                        // would close our HyUI page before the player sees it.
+                        try {
+                            Ref<EntityStore> liveRef = playerRef.getReference();
+                            if (liveRef != null && liveRef.isValid()) {
+                                liveRef.getStore().tryRemoveComponent(liveRef, DeathComponent.getComponentType());
+                            }
+                        } catch (Throwable ignored) {}
+                        // Reset HP so the native system doesn't immediately re-add DeathComponent.
+                        if (healthManager != null) {
+                            healthManager.resetHealth(playerId);
+                        }
+                        // Re-fetch entity reference after the archetype transition caused by
+                        // removing DeathComponent — the old ref/store are stale and HyUI's
+                        // refresh loop would fail to find the entity for label updates.
+                        Ref<EntityStore> freshRef = playerRef.getReference();
+                        if (freshRef == null || !freshRef.isValid()) return;
+                        Store<EntityStore> freshStore = freshRef.getStore();
+                        if (freshStore == null) return;
+                        try {
+                            deathPageRef.showFor(playerRef, freshStore, DEATH_SCREEN_DURATION_MS,
+                                    livesRemaining, plugin);
+                        } catch (Throwable t) {
+                            plugin.getLogger().at(Level.WARNING).withCause(t).log("DeathPage.showFor failed");
+                        }
+                    });
                 }
             }
         }
@@ -245,12 +276,15 @@ public final class RunStateManager {
                 Store<EntityStore> store = entityRef.getStore();
                 final int clearedFloor = data.getCurrentFloor();
                 final int revives = data.getLivesRemaining();
-                try {
-                    betweenFloorsPage.showFor(playerRef, store, clearedFloor, revives);
-                } catch (Throwable t) {
-                    plugin.getLogger().at(Level.WARNING).log(
-                            "BetweenFloorsPage.showFor failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
-                }
+                World world = store.getExternalData().getWorld();
+                final com.LucaStudios.HytaleDungeons.UI.BetweenFloorsPage betweenFloorsPageRef = betweenFloorsPage;
+                world.execute(() -> {
+                    try {
+                        betweenFloorsPageRef.showFor(playerRef, store, clearedFloor, revives);
+                    } catch (Throwable t) {
+                        plugin.getLogger().at(Level.WARNING).withCause(t).log("BetweenFloorsPage.showFor failed");
+                    }
+                });
             }
         }
     }
@@ -786,7 +820,7 @@ public final class RunStateManager {
 
         // Clear the native death component so the player is "alive" again.
         try {
-            store.removeComponent(entityRef, DeathComponent.getComponentType());
+            store.tryRemoveComponent(entityRef, DeathComponent.getComponentType());
         } catch (Throwable t) {
             log("revivePlayer: failed to remove DeathComponent for %s: %s",
                     playerId, t.getClass().getSimpleName() + ": " + t.getMessage());

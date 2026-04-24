@@ -3,14 +3,20 @@ package com.LucaStudios.HytaleDungeons.UI;
 import au.ellie.hyui.builders.HyUIPage;
 import au.ellie.hyui.builders.LabelBuilder;
 import au.ellie.hyui.builders.PageBuilder;
-import au.ellie.hyui.events.PageRefreshResult;
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
+import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 /**
  * Modal death screen shown for the duration of {@code RunStateManager.DEATH_SCREEN_DURATION_MS}.
@@ -19,14 +25,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * divider + subtitle layout) but without buttons — a large countdown card sits
  * where the stats/button rows go. Closes itself when the countdown expires.
  * Non-dismissable ({@link CustomPageLifetime#CantClose}).</p>
+ *
+ * <p>Countdown updates are driven by our own {@link ScheduledExecutorService}
+ * rather than HyUI's {@code onRefresh} mechanism — HyUI cannot register
+ * recurring refresh callbacks when a page is opened via {@code world.execute()}
+ * (a one-shot deferred context). Instead, each tick updates the label in memory
+ * and dispatches {@code page.updatePage(false)} on the world thread to push the
+ * change to the client.</p>
  */
 public final class DeathPage {
 
     static final String ID_COUNTDOWN = "death_countdown";
     static final long REFRESH_RATE_MS = 250L;
 
+    private JavaPlugin plugin;
     private final ConcurrentHashMap<UUID, Long> deadlines = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, HyUIPage> activePages = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, ScheduledFuture<?>> refreshTasks = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService refreshScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "death-page-refresh");
+        t.setDaemon(true);
+        return t;
+    });
 
     /**
      * Open the death page for a player. Must be called on the world thread.
@@ -37,7 +57,9 @@ public final class DeathPage {
     public void showFor(PlayerRef playerRef,
                         Store<EntityStore> store,
                         long durationMs,
-                        int livesRemaining) {
+                        int livesRemaining,
+                        JavaPlugin plugin) {
+        this.plugin = plugin;
         UUID playerId = playerRef.getUuid();
         long deadline = System.currentTimeMillis() + durationMs;
         deadlines.put(playerId, deadline);
@@ -47,30 +69,60 @@ public final class DeathPage {
         HyUIPage page = PageBuilder.pageForPlayer(playerRef)
                 .fromHtml(html)
                 .withLifetime(CustomPageLifetime.CantClose)
-                .withRefreshRate(REFRESH_RATE_MS)
-                .onRefresh(p -> onRefresh(p, playerId))
                 .open(store);
+        if (page == null) {
+            plugin.getLogger().at(Level.WARNING).log(
+                    "DeathPage: PageBuilder.open() returned null for player " + playerId);
+            deadlines.remove(playerId);
+            return;
+        }
+        log("Opened death page for player " + playerId + " with duration " + durationMs + "ms and lives remaining: " + livesRemaining);
         activePages.put(playerId, page);
+
+        // HyUI cannot register recurring refresh callbacks when a page is opened
+        // from world.execute() — drive countdown updates from our own scheduler instead.
+        ScheduledFuture<?> task = refreshScheduler.scheduleAtFixedRate(
+                () -> tickRefresh(playerId, playerRef, page),
+                REFRESH_RATE_MS, REFRESH_RATE_MS, TimeUnit.MILLISECONDS);
+        ScheduledFuture<?> old = refreshTasks.put(playerId, task);
+        if (old != null) old.cancel(false);
     }
 
-    /** Called on HyUI scheduler thread. Update countdown label, close when expired. */
-    private PageRefreshResult onRefresh(HyUIPage page, UUID playerId) {
+    /**
+     * Runs every {@link #REFRESH_RATE_MS} on the refresh scheduler thread.
+     * Updates the countdown label in memory, then dispatches {@code updatePage}
+     * to the world thread to push the change to the client.
+     */
+    private void tickRefresh(UUID playerId, PlayerRef playerRef, HyUIPage page) {
         Long deadline = deadlines.get(playerId);
-        if (deadline == null) {
-            return PageRefreshResult.NONE;
-        }
+        if (deadline == null) return;
+
         long remainingMs = deadline - System.currentTimeMillis();
+        log("tickRefresh: %s remaining=%dms", playerId, remainingMs);
+
         if (remainingMs <= 0) {
             deadlines.remove(playerId);
             activePages.remove(playerId);
-            page.close();
-            return PageRefreshResult.NONE;
+            ScheduledFuture<?> task = refreshTasks.remove(playerId);
+            if (task != null) task.cancel(false);
+            Ref<EntityStore> ref = playerRef.getReference();
+            if (ref != null && ref.isValid()) {
+                ref.getStore().getExternalData().getWorld().execute(page::close);
+            }
+            return;
         }
+
         int secs = (int) Math.ceil(remainingMs / 1000.0);
         if (secs < 1) secs = 1;
         final String text = Integer.toString(secs);
         page.getById(ID_COUNTDOWN, LabelBuilder.class).ifPresent(l -> l.withText(text));
-        return PageRefreshResult.UPDATE;
+
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            log("tickRefresh: playerRef no longer valid for %s", playerId);
+            return;
+        }
+        ref.getStore().getExternalData().getWorld().execute(() -> page.updatePage(false));
     }
 
     /**
@@ -79,10 +131,16 @@ public final class DeathPage {
      */
     public void closeFor(UUID playerId) {
         deadlines.remove(playerId);
+        ScheduledFuture<?> task = refreshTasks.remove(playerId);
+        if (task != null) task.cancel(false);
         HyUIPage page = activePages.remove(playerId);
         if (page != null) {
             try { page.close(); } catch (Throwable ignored) {}
         }
+    }
+
+    private void log(String format, Object... args) {
+        plugin.getLogger().at(Level.INFO).log(String.format(format, args));
     }
 
     private static String buildHtml(int livesRemaining, int initialSecs) {
