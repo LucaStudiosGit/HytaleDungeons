@@ -3,9 +3,11 @@ package com.LucaStudios.HytaleDungeons.UI;
 import au.ellie.hyui.builders.HyUIPage;
 import au.ellie.hyui.builders.PageBuilder;
 import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
+import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
+import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -15,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 /**
  * Modal game-over screen (no lives left). Visually mirrors {@link VictoryPage}
@@ -49,11 +52,13 @@ public final class GameOverPage {
 
     private final RunStateManager runStateManager;
     private final MainMenuPage mainMenuPage;
+    private final JavaPlugin plugin;
     private final ConcurrentHashMap<UUID, HyUIPage> activePages = new ConcurrentHashMap<>();
 
-    public GameOverPage(RunStateManager runStateManager, MainMenuPage mainMenuPage) {
+    public GameOverPage(RunStateManager runStateManager, MainMenuPage mainMenuPage, JavaPlugin plugin) {
         this.runStateManager = runStateManager;
         this.mainMenuPage = mainMenuPage;
+        this.plugin = plugin;
     }
 
     /** Immutable stats snapshot baked into the page HTML at open time. */
@@ -67,16 +72,29 @@ public final class GameOverPage {
         UUID playerId = playerRef.getUuid();
         final HyUIPage[] pageSlot = new HyUIPage[1];
 
+        // Capture the world NOW from the valid store. After the death→revival
+        // archetype transition (DeathComponent removed, HP reset) the entity's
+        // Ref may be transitional at button-click time, making a live
+        // worldFromPlayerRef() call return null and silently break the handlers.
+        World world = store.getExternalData().getWorld();
+
         String html = buildHtml(stats);
 
         HyUIPage page = PageBuilder.pageForPlayer(playerRef)
                 .fromHtml(html)
                 .withLifetime(CustomPageLifetime.CantClose)
                 .addEventListener(BTN_RESTART, CustomUIEventBindingType.Activating,
-                        v -> handleRestart(pageSlot[0], playerRef, playerId))
+                        v -> handleRestart(pageSlot[0], playerRef, playerId, world))
                 .addEventListener(BTN_LOBBY, CustomUIEventBindingType.Activating,
-                        v -> handleLobby(pageSlot[0], playerRef, store))
+                        v -> handleLobby(pageSlot[0], playerRef, playerId, world))
                 .open(store);
+        if (page == null) {
+            plugin.getLogger().at(Level.WARNING).log(
+                    "GameOverPage: PageBuilder.open() returned null for player " + playerId);
+            return;
+        }
+        plugin.getLogger().at(Level.INFO).log(
+                "GameOverPage: opened for player " + playerId);
         pageSlot[0] = page;
         activePages.put(playerId, page);
     }
@@ -88,56 +106,41 @@ public final class GameOverPage {
         }
     }
 
-    private void handleRestart(HyUIPage page, PlayerRef playerRef, UUID playerId) {
-        closePage(page, playerId);
-        World world = worldFromPlayerRef(playerRef);
-        if (world != null) {
-            world.execute(() -> runStateManager.onNewRunRequested(playerId, playerRef));
-        } else {
-            runStateManager.onNewRunRequested(playerId, playerRef);
-        }
+    private void handleRestart(HyUIPage page, PlayerRef playerRef, UUID playerId, World world) {
+        // Close the page directly FIRST — in single player the world tick is
+        // paused while a CantClose modal is showing, so world.execute() would
+        // deadlock. Closing synchronously unpauses the tick; the state method's
+        // own internal world.execute() calls then run normally (same pattern as
+        // MainMenuPage's Start button calling startRunFromLobby directly).
+        activePages.remove(playerId);
+        if (page != null) try { page.close(); } catch (Throwable ignored) {}
+        runStateManager.onNewRunRequested(playerId, playerRef);
     }
 
-    private void handleLobby(HyUIPage page, PlayerRef playerRef, Store<EntityStore> store) {
-        UUID playerId = playerRef.getUuid();
-        closePage(page, playerId);
-        World world = worldFromPlayerRef(playerRef);
-        Runnable reset = () -> {
-            if (!playerRef.isValid()) return;
-            runStateManager.onReturnToLobby(playerId, playerRef);
-        };
-        Runnable reopenMenu = () -> {
+    private void handleLobby(HyUIPage page, PlayerRef playerRef, UUID playerId, World world) {
+        activePages.remove(playerId);
+        if (page != null) try { page.close(); } catch (Throwable ignored) {}
+        runStateManager.onReturnToLobby(playerId, playerRef);
+        // Defer the main-menu open so the game-over close packet has time to
+        // fully tear down on the client before the new page is wired up.
+        // By now the page is closed, so world.execute() will run normally.
+        SCHEDULER.schedule(() -> {
             if (world == null) {
-                if (playerRef.isValid()) mainMenuPage.showFor(playerRef, store);
+                if (playerRef.isValid()) {
+                    Ref<EntityStore> ref = playerRef.getReference();
+                    if (ref != null && ref.isValid()) {
+                        mainMenuPage.showFor(playerRef, ref.getStore());
+                    }
+                }
                 return;
             }
             world.execute(() -> {
                 if (!playerRef.isValid()) return;
-                mainMenuPage.showFor(playerRef, store);
+                Ref<EntityStore> ref = playerRef.getReference();
+                if (ref == null || !ref.isValid()) return;
+                mainMenuPage.showFor(playerRef, ref.getStore());
             });
-        };
-        if (world != null) {
-            world.execute(reset);
-        } else {
-            reset.run();
-        }
-        // Defer the main-menu open so the game-over close packet has time to
-        // fully tear down on the client before the new page is wired up.
-        SCHEDULER.schedule(reopenMenu, LOBBY_REOPEN_DELAY_MS, TimeUnit.MILLISECONDS);
-    }
-
-    private void closePage(HyUIPage page, UUID playerId) {
-        activePages.remove(playerId);
-        if (page != null) {
-            try { page.close(); } catch (Throwable ignored) {}
-        }
-    }
-
-    private static World worldFromPlayerRef(PlayerRef playerRef) {
-        if (playerRef == null || !playerRef.isValid()) return null;
-        var ref = playerRef.getReference();
-        if (ref == null || !ref.isValid()) return null;
-        return ref.getStore().getExternalData().getWorld();
+        }, LOBBY_REOPEN_DELAY_MS, TimeUnit.MILLISECONDS);
     }
 
     // ── HTML ────────────────────────────────────────────────────────────

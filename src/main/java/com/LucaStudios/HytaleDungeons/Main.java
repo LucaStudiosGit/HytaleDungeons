@@ -122,7 +122,7 @@ public class Main extends JavaPlugin {
         MainMenuPage mainMenuPage = new MainMenuPage(this);
         mainMenuPage.setRunStateManager(runStateManager);
         runStateManager.setGameOverPage(
-                new com.LucaStudios.HytaleDungeons.UI.GameOverPage(runStateManager, mainMenuPage));
+                new com.LucaStudios.HytaleDungeons.UI.GameOverPage(runStateManager, mainMenuPage, this));
         runStateManager.setBetweenFloorsPage(
                 new com.LucaStudios.HytaleDungeons.UI.BetweenFloorsPage(runStateManager, playerDataManager));
         runStateManager.setVictoryPage(
@@ -134,7 +134,7 @@ public class Main extends JavaPlugin {
         // and hands off to the native pipeline for HP / FX / death.
         getEntityStoreRegistry().registerSystem(
                 new com.LucaStudios.HytaleDungeons.Combat.DamageInterceptor(
-                        enemyManager, combatManager, playerDataManager));
+                        enemyManager, combatManager, playerDataManager, runStateManager));
 
         // ECS death observer — bridges native DeathComponent back to our
         // live-count / chain-spawn bookkeeping.

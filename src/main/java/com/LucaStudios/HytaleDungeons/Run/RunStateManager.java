@@ -499,6 +499,27 @@ public final class RunStateManager {
     }
 
     /**
+     * Debug: force-open the game-over page with fake stats without going through
+     * the death flow.
+     */
+    public void debugOpenGameOver(UUID playerId, PlayerRef playerRef) {
+        if (gameOverPage == null || playerRef == null || !playerRef.isValid()) return;
+        Ref<EntityStore> entityRef = playerRef.getReference();
+        if (entityRef == null || !entityRef.isValid()) return;
+        Store<EntityStore> store = entityRef.getStore();
+        var stats = new com.LucaStudios.HytaleDungeons.UI.GameOverPage.GameOverStats(
+                3, 42, 0, 123456L);
+        World world = store.getExternalData().getWorld();
+        world.execute(() -> {
+            Ref<EntityStore> freshRef = playerRef.getReference();
+            if (freshRef == null || !freshRef.isValid()) return;
+            Store<EntityStore> freshStore = freshRef.getStore();
+            if (freshStore == null) return;
+            gameOverPage.showFor(playerRef, freshStore, stats);
+        });
+    }
+
+    /**
      * Called from GAME_OVER or VICTORY when the player chooses "New Run".
      */
     public void onNewRunRequested(UUID playerId, PlayerRef playerRef) {
@@ -509,27 +530,35 @@ public final class RunStateManager {
             return;
         }
 
+        boolean wasGameOver = data.getState() == RunState.GAME_OVER;
         RunState oldState = data.getState();
         data.reset(MAX_LIVES, STARTING_FLOOR);
         fireStateChange(playerId, oldState, RunState.FLOOR_ACTIVE, data);
 
-        // Clear the native death component so mobs treat the player as alive.
-        if (playerRef != null && playerRef.isValid()) {
-            Ref<EntityStore> entityRef = playerRef.getReference();
-            if (entityRef != null && entityRef.isValid()) {
-                Store<EntityStore> store = entityRef.getStore();
-                try {
-                    store.removeComponent(entityRef, DeathComponent.getComponentType());
-                } catch (Throwable t) {
-                    log("onNewRunRequested: failed to remove DeathComponent for %s: %s",
-                            playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+        // Only the GAME_OVER path needs to clear the native death component and
+        // refill HP — the player ended that run dead. On VICTORY the player is
+        // already alive and the ECS entity is in a delicate post-transition
+        // state; mutating it here (same as onReturnToLobby's wasGameOver guard
+        // skips) leaves the archetype in a bad state for the floor-regen below.
+        if (wasGameOver) {
+            if (playerRef != null && playerRef.isValid()) {
+                Ref<EntityStore> entityRef = playerRef.getReference();
+                if (entityRef != null && entityRef.isValid()) {
+                    Store<EntityStore> store = entityRef.getStore();
+                    // tryRemoveComponent — the page-open path already removed
+                    // DeathComponent when the game-over screen went up, so the
+                    // throwing variant would corrupt the ECS archetype here.
+                    try {
+                        store.tryRemoveComponent(entityRef, DeathComponent.getComponentType());
+                    } catch (Throwable t) {
+                        log("onNewRunRequested: failed to remove DeathComponent for %s: %s",
+                                playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
+                    }
                 }
             }
-        }
-
-        // Reset HP to full on new run
-        if (healthManager != null) {
-            healthManager.resetHealth(playerId);
+            if (healthManager != null) {
+                healthManager.resetHealth(playerId);
+            }
         }
 
         // Reset player data (gear, backpack, XP, level)
@@ -673,12 +702,15 @@ public final class RunStateManager {
         if (wasGameOver) {
             // Clear the native death component and refill HP — the player
             // ended the run dead so these are both needed before lobby entry.
+            // tryRemoveComponent — the page-open path already cleared
+            // DeathComponent when the game-over screen went up, so the
+            // throwing variant would corrupt the ECS archetype here.
             if (playerRef != null && playerRef.isValid()) {
                 Ref<EntityStore> entityRef = playerRef.getReference();
                 if (entityRef != null && entityRef.isValid()) {
                     Store<EntityStore> store = entityRef.getStore();
                     try {
-                        store.removeComponent(entityRef, DeathComponent.getComponentType());
+                        store.tryRemoveComponent(entityRef, DeathComponent.getComponentType());
                     } catch (Throwable t) {
                         log("onReturnToLobby: failed to remove DeathComponent for %s: %s",
                                 playerId, t.getClass().getSimpleName() + ": " + t.getMessage());
@@ -756,7 +788,6 @@ public final class RunStateManager {
             if (gameOverPage != null && playerRef != null && playerRef.isValid()) {
                 Ref<EntityStore> entityRef = playerRef.getReference();
                 if (entityRef != null && entityRef.isValid()) {
-                    Store<EntityStore> store = entityRef.getStore();
                     World world = entityRef.getStore().getExternalData().getWorld();
                     var stats = new com.LucaStudios.HytaleDungeons.UI.GameOverPage.GameOverStats(
                             data.getCurrentFloor(),
@@ -764,14 +795,35 @@ public final class RunStateManager {
                             data.getLivesRemaining(),
                             data.getRunDurationMs());
                     final com.LucaStudios.HytaleDungeons.UI.GameOverPage pageRef = gameOverPage;
+                    // Step 1 (world thread): cancel Hytale's native respawn by removing
+                    // DeathComponent and refill HP so the engine doesn't immediately re-add it.
                     world.execute(() -> {
                         try {
-                            pageRef.showFor(playerRef, store, stats);
+                            Ref<EntityStore> liveRef = playerRef.getReference();
+                            if (liveRef != null && liveRef.isValid()) {
+                                liveRef.getStore().tryRemoveComponent(liveRef, DeathComponent.getComponentType());
+                            }
+                        } catch (Throwable ignored) {}
+                        if (healthManager != null) {
+                            healthManager.resetHealth(playerId);
+                        }
+                    });
+                    // Step 2 (next tick): open the game-over page in a SEPARATE world.execute
+                    // so the DeathComponent archetype transition fully commits before HyUI
+                    // wires button events. Opening in the same tick as the removal causes
+                    // click handlers to silently not fire in single player.
+                    scheduler.schedule(() -> world.execute(() -> {
+                        Ref<EntityStore> freshRef = playerRef.getReference();
+                        if (freshRef == null || !freshRef.isValid()) return;
+                        Store<EntityStore> freshStore = freshRef.getStore();
+                        if (freshStore == null) return;
+                        try {
+                            pageRef.showFor(playerRef, freshStore, stats);
                         } catch (Throwable t) {
                             plugin.getLogger().at(Level.WARNING).log(
                                     "GameOverPage.showFor failed: " + t.getClass().getSimpleName() + ": " + t.getMessage());
                         }
-                    });
+                    }), 100L, TimeUnit.MILLISECONDS);
                 }
             }
         }

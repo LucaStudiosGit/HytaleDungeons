@@ -4,6 +4,9 @@ import com.LucaStudios.HytaleDungeons.Enemies.EnemyManager;
 import com.LucaStudios.HytaleDungeons.Enemies.EnemyState;
 import com.LucaStudios.HytaleDungeons.Loot.ItemDefinition;
 import com.LucaStudios.HytaleDungeons.PlayerData.PlayerDataManager;
+import com.LucaStudios.HytaleDungeons.Run.RunData;
+import com.LucaStudios.HytaleDungeons.Run.RunState;
+import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
 import com.hypixel.hytale.component.ArchetypeChunk;
 import com.hypixel.hytale.component.CommandBuffer;
 import com.hypixel.hytale.component.Ref;
@@ -24,13 +27,16 @@ public final class DamageInterceptor extends DamageEventSystem {
     private final EnemyManager enemyManager;
     private final CombatManager combatManager;
     private final PlayerDataManager playerDataManager;
+    private final RunStateManager runStateManager;
 
     public DamageInterceptor(EnemyManager enemyManager,
                              CombatManager combatManager,
-                             PlayerDataManager playerDataManager) {
+                             PlayerDataManager playerDataManager,
+                             RunStateManager runStateManager) {
         this.enemyManager = enemyManager;
         this.combatManager = combatManager;
         this.playerDataManager = playerDataManager;
+        this.runStateManager = runStateManager;
     }
 
     @Override
@@ -96,6 +102,17 @@ public final class DamageInterceptor extends DamageEventSystem {
         if (player == null) return;
 
         UUID playerId = attackerState.playerId();
+
+        // Cancel damage while the player isn't actively running a floor —
+        // during DEAD / GAME_OVER / VICTORY / UPGRADING / LOBBY the player
+        // is frozen behind a modal page and shouldn't be taking hits from
+        // mobs whose native AI is still pathing toward them.
+        RunData runData = runStateManager.getRunData(playerId);
+        if (runData == null || runData.getState() != RunState.FLOOR_ACTIVE) {
+            damage.setCancelled(true);
+            return;
+        }
+
         int enemyAtk = attackerState.baseAtk();
 
         ItemDefinition armor = playerDataManager.getEquippedArmor(playerId);
