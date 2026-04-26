@@ -2,6 +2,8 @@ package com.LucaStudios.HytaleDungeons;
 
 import com.LucaStudios.HytaleDungeons.Debug.DebugCommands;
 import com.LucaStudios.HytaleDungeons.Combat.CombatManager;
+import com.LucaStudios.HytaleDungeons.Combat.DodgeInputObserver;
+import com.LucaStudios.HytaleDungeons.Combat.DodgeManager;
 import com.LucaStudios.HytaleDungeons.Combat.MeleeCooldownHandler;
 import com.LucaStudios.HytaleDungeons.Combat.RightClickCrossbowHandler;
 import com.LucaStudios.HytaleDungeons.Enemies.EnemyManager;
@@ -28,6 +30,7 @@ public class Main extends JavaPlugin {
 
     private static Main instance;
     private RightClickCrossbowHandler rightClickCrossbowHandler;
+    private DodgeInputObserver dodgeInputObserver;
     private RunStateManager runStateManager;
     private HealthManager healthManager;
     private CombatManager combatManager;
@@ -83,6 +86,9 @@ public class Main extends JavaPlugin {
         if (rightClickCrossbowHandler != null) {
             rightClickCrossbowHandler.shutdown();
         }
+        if (dodgeInputObserver != null) {
+            dodgeInputObserver.shutdown();
+        }
         if (runStateManager != null) {
             runStateManager.shutdown();
         }
@@ -130,11 +136,15 @@ public class Main extends JavaPlugin {
         // Combat system — cooldowns, damage calculation
         combatManager = new CombatManager(runStateManager);
 
+        // Dodge system — Space-key dash with cooldown + i-frames.
+        DodgeManager dodgeManager = new DodgeManager(runStateManager);
+
         // ECS damage interceptor — rewrites player↔mob damage with our formulas
-        // and hands off to the native pipeline for HP / FX / death.
+        // and hands off to the native pipeline for HP / FX / death. Also consults
+        // dodgeManager to nullify damage during a player's i-frame window.
         getEntityStoreRegistry().registerSystem(
                 new com.LucaStudios.HytaleDungeons.Combat.DamageInterceptor(
-                        enemyManager, combatManager, playerDataManager, runStateManager));
+                        enemyManager, combatManager, playerDataManager, runStateManager, dodgeManager));
 
         // ECS death observer — bridges native DeathComponent back to our
         // live-count / chain-spawn bookkeeping.
@@ -157,6 +167,10 @@ public class Main extends JavaPlugin {
 
         // Melee cooldown enforcement — blocks left-click during weapon cooldown
         new MeleeCooldownHandler(combatManager).register(this);
+
+        // Dodge — observe Space-key (jump) presses, trigger dodge via DodgeManager.
+        dodgeInputObserver = new DodgeInputObserver(dodgeManager);
+        dodgeInputObserver.register(this);
 
         // Potion key watcher — must register BEFORE hotbar lock so the
         // watcher sees slot-4 presses before the lock filter consumes them.

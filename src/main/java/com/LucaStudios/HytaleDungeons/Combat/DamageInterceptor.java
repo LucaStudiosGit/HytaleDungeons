@@ -17,6 +17,7 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageEventSystem;
 import com.hypixel.hytale.server.core.modules.entity.damage.DamageModule;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,15 +29,18 @@ public final class DamageInterceptor extends DamageEventSystem {
     private final CombatManager combatManager;
     private final PlayerDataManager playerDataManager;
     private final RunStateManager runStateManager;
+    private final DodgeManager dodgeManager;
 
     public DamageInterceptor(EnemyManager enemyManager,
                              CombatManager combatManager,
                              PlayerDataManager playerDataManager,
-                             RunStateManager runStateManager) {
+                             RunStateManager runStateManager,
+                             DodgeManager dodgeManager) {
         this.enemyManager = enemyManager;
         this.combatManager = combatManager;
         this.playerDataManager = playerDataManager;
         this.runStateManager = runStateManager;
+        this.dodgeManager = dodgeManager;
     }
 
     @Override
@@ -102,6 +106,14 @@ public final class DamageInterceptor extends DamageEventSystem {
         if (player == null) return;
 
         UUID playerId = attackerState.playerId();
+
+        // i-frames: cancel damage while victim is mid-dodge.
+        PlayerRef victimPlayerRef = store.getComponent(victimRef, PlayerRef.getComponentType());
+        if (victimPlayerRef != null && dodgeManager != null
+                && dodgeManager.isInIFrames(victimPlayerRef.getUuid())) {
+            damage.setCancelled(true);
+            return;
+        }
 
         // Cancel damage while the player isn't actively running a floor —
         // during DEAD / GAME_OVER / VICTORY / UPGRADING / LOBBY the player

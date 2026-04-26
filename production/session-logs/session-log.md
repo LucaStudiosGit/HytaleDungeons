@@ -6121,3 +6121,202 @@ src/test/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyStateTest.java
 src/test/java/com/LucaStudios/HytaleDungeons/Run/RunStateTest.java
 ---
 
+## Session End: 20260425_213334
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260425_213620
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260425_214032
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+---
+
+## Session End: 20260425_214601
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260425_214901
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260425_215407
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260425_215943
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260425_221008
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260425_225007
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260425_225248
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260425_225829
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260425_230401
+### Commits
+d95027d Improve game-over flow and death handling
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Camera/TopDownView.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260426_135418
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Camera/TopDownView.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260426_140724
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Camera/TopDownView.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260426_141238
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Camera/TopDownView.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260426_141729
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Camera/TopDownView.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260426_142402
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Camera/TopDownView.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
+## Session End: 20260426_143355
+### Uncommitted Changes
+production/session-logs/session-log.md
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Camera/TopDownView.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+---
+
