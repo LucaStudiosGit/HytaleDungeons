@@ -107,8 +107,6 @@ public final class MainMenuPage {
                 .withLifetime(CustomPageLifetime.CantClose)
                 .addEventListener(BTN_START, CustomUIEventBindingType.Activating,
                         v -> {
-                            plugin.getLogger().at(Level.INFO)
-                                    .log("MainMenu: Start pressed by %s", playerId);
                             handleStart(wrap(activePages.remove(playerId)));
                             if (runStateManager != null) {
                                 runStateManager.startRunFromLobby(playerId, playerRef);
@@ -265,14 +263,14 @@ public final class MainMenuPage {
                             <label>START GAME</label>
                         </button>
                         <div class="menu_h_spacer"></div>
-                        <button id="btn_discord" class="custom-textbutton menu_dark_size"
+                        <button id="btn_discord" class="custom-button menu_dark_size"
                             data-hyui-default-bg="background-image: HUD/Images/BtnDark.png;"
                             data-hyui-hovered-bg="background-image: HUD/Images/BtnDarkHov.png;"
                             data-hyui-pressed-bg="background-image: HUD/Images/BtnDarkPrs.png;"
-                            data-hyui-default-label-style="color: #cccccc; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
-                            data-hyui-hovered-label-style="color: #ffffff; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;"
-                            data-hyui-pressed-label-style="color: #aaaaaa; font-size: 16; font-family: secondary; text-align: center; vertical-align: center;">
-                            <label>Discord</label>
+                            style="layout-mode: left; layout-align: middlecenter;">
+                            <img src="HUD/Images/DiscordIcon.png"
+                                style="anchor-width: 28; anchor-height: 28; margin-left: 12; margin-right: 8;"/>
+                            <label style="color: #cccccc; font-size: 16; font-weight: bold; font-family: secondary; text-transform: uppercase; vertical-align: center;">Discord</label>
                         </button>
                         <div class="menu_btn_gap"></div>
                         <button id="btn_quit" class="custom-textbutton menu_dark_size"
