@@ -6320,3 +6320,38 @@ src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
 src/main/java/com/LucaStudios/HytaleDungeons/Main.java
 ---
 
+## Session End: 20260426_211023
+### Commits
+4c26b5a Add debug finish-floor cmd; update Discord UI
+e32abc9 Update README.md
+5a69cde Add dodge mechanic with input observer
+### Uncommitted Changes
+run/universe/worlds/default/chunks/-1.0.region.bin
+run/universe/worlds/default/chunks/0.0.region.bin
+run/universe/worlds/default/resources/Time.json
+run/universe/worlds/default/resources/Time.json.bak
+src/main/java/com/LucaStudios/HytaleDungeons/Camera/TopDownView.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DamageInterceptor.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DodgeInputObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/DodgeManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Combat/MeleeCooldownHandler.java
+src/main/java/com/LucaStudios/HytaleDungeons/Debug/DebugCommands.java
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorGenerator.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorTemplate.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorTemplateLibrary.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/PlacedRoom.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/QuarterFloorBuilder.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/HealthManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PlayerDeathObserver.java
+src/main/java/com/LucaStudios/HytaleDungeons/Health/PotionKeyHandler.java
+src/main/java/com/LucaStudios/HytaleDungeons/Loot/ItemDatabase.java
+src/main/java/com/LucaStudios/HytaleDungeons/Main.java
+src/main/java/com/LucaStudios/HytaleDungeons/PlayerData/PlayerDataManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/Restrictions/NoNaturalSpawnRestriction.java
+src/main/java/com/LucaStudios/HytaleDungeons/Run/RunStateManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/DeathPage.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/LobbyConfig.java
+src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
+---
+

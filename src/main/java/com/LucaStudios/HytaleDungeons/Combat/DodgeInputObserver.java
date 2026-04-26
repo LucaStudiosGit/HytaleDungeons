@@ -17,20 +17,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Detects Space-key (jump) presses by scanning the player's
- * {@link PlayerInput#getMovementUpdateQueue()} for {@link PlayerInput.SetMovementStates}
- * entries with {@code jumping = true}, and reads the most recent
- * {@link PlayerInput.SetClientVelocity} as the dodge direction.
- *
- * <p>{@link com.LucaStudios.HytaleDungeons.Restrictions.NoJumpRestriction} zeroes
- * {@code jumpForce}, which prevents the engine from ever setting
- * {@code MovementStatesComponent.jumping = true}. So we observe the raw input
- * queue (before {@code ProcessPlayerInput} consumes it) instead.</p>
- *
- * <p>Repeated frames of a held key are debounced by {@link DodgeManager}'s
- * cooldown.</p>
- */
 public final class DodgeInputObserver {
 
     private static final long TICK_MS = 50L; // 20 Hz
@@ -103,12 +89,11 @@ public final class DodgeInputObserver {
         boolean jumpPressed = false;
         double dirX = 0.0;
         double dirZ = 0.0;
-        // The most recent SetClientVelocity in the queue is the client's
-        // current WASD-driven intent. Last write wins — keep overwriting
-        // as we walk the queue.
         for (PlayerInput.InputUpdate update : input.getMovementUpdateQueue()) {
-            if (update instanceof PlayerInput.SetMovementStates sms
-                    && sms.movementStates().jumping) {
+            if (update instanceof PlayerInput.SetMovementStates(
+                    com.hypixel.hytale.protocol.MovementStates movementStates
+            )
+                    && movementStates.jumping) {
                 jumpPressed = true;
             } else if (update instanceof PlayerInput.SetClientVelocity scv) {
                 dirX = scv.getVelocity().getX();

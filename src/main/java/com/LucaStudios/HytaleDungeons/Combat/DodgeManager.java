@@ -19,15 +19,6 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Tracks per-player dodge cooldown and i-frame windows. The dodge motion
- * itself is delivered as a {@link KnockbackComponent} on the player — the
- * engine's {@code KnockbackSystems$ApplyPlayerKnockback} runs each tick,
- * applies the velocity, decays it via {@link VelocityConfig}, and syncs
- * the result to the client.
- *
- * <p>Dodges are gated on {@link RunState#FLOOR_ACTIVE} — same as combat.</p>
- */
 public final class DodgeManager {
 
     private static final long DODGE_COOLDOWN_MS = 800L;
@@ -35,7 +26,6 @@ public final class DodgeManager {
     private static final float DODGE_DURATION_S = 0.3f;
     private static final double DODGE_SPEED = 12.0;
 
-    /** Candidate animation IDs, in priority order. First one bound on the model wins. */
     private static final String[] DODGE_ANIMATION_CANDIDATES = {
             "Roll", "SafetyRoll", "DashForward", "RollLeft", "RollRight", "RollBackward"
     };
@@ -63,12 +53,6 @@ public final class DodgeManager {
         if (playerId != null) states.remove(playerId);
     }
 
-    /**
-     * Attempt a dodge in the given world-space direction (caller's responsibility
-     * to source it — typically the most recent {@code SetClientVelocity} from the
-     * input queue, which reflects the client's instantaneous WASD intent).
-     * Must be called on the world thread.
-     */
     public void attemptDodge(PlayerRef playerRef, Ref<EntityStore> entityRef, Store<EntityStore> store,
                              double dirX, double dirZ) {
         if (playerRef == null || !playerRef.isValid()) return;
@@ -115,7 +99,6 @@ public final class DodgeManager {
         String animId = model.getFirstBoundAnimationId(DODGE_ANIMATION_CANDIDATES);
         if (animId == null) return;
 
-        // 5th arg = include the subject player (without it, only other players see the roll).
         AnimationUtils.playAnimation(entityRef, AnimationSlot.Action, animId, true, store);
     }
 }

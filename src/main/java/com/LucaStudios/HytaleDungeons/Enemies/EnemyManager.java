@@ -87,8 +87,6 @@ public final class EnemyManager {
     public void registerFloor(UUID playerId, PlayerRef playerRef, World world, List<SpawnGroup> groups) {
         if (playerId == null) return;
         floorRegistrationMap.put(playerId, new FloorRegistration(playerRef, world, groups));
-        logger.accept("Registered floor for " + playerId + " with "
-                + (groups == null ? 0 : groups.size()) + " spawn groups");
     }
 
     void registerFloorForTest(UUID playerId, List<SpawnGroup> groups) {
@@ -157,10 +155,6 @@ public final class EnemyManager {
                                 }
                             }
                         }
-                        logger.accept(String.format(
-                                "Spawned %s [%s] hp=%d atk=%d group=%s at (%.1f, %.1f, %.1f)",
-                                arch.entityID, arch.name(), fHp, fAtk, groupId,
-                                position.x, position.y, position.z));
                         // TODO: play "pop"/"swish" SFX at position once Hytale audio API is identified
                     } catch (Throwable t) {
                         logger.accept("Failed to spawn " + arch.entityID + ": "
@@ -170,9 +164,6 @@ public final class EnemyManager {
                 pending.add(future);
             }
         }
-
-        logger.accept("SpawnGroup " + group.id() + " scheduling " + requested
-                + " mobs (stagger " + MOB_SPAWN_IN_GROUP_DELAY_MS + "ms)");
         // TODO: Track live mobs and chain nextGroup on clear (Enemy AI GDD)
     }
 
@@ -211,7 +202,6 @@ public final class EnemyManager {
         staggerScheduler.schedule(() -> {
             try {
                 CommandManager.get().handleCommand(ConsoleSender.INSTANCE, "entity clean --confirm");
-                logger.accept("Ran /entity clean --confirm (cancelled " + cancelledFinal + " pending spawns)");
             } catch (Throwable t) {
                 logger.accept("Failed to run /entity clean: "
                         + t.getClass().getSimpleName() + ": " + t.getMessage());
@@ -246,8 +236,6 @@ public final class EnemyManager {
         if (toRemove.isEmpty() && cancelled == 0) return;
 
         if (world == null || toRemove.isEmpty()) {
-            logger.accept("Despawn for " + playerId + ": cancelled " + cancelled
-                    + " pending, no live mobs to remove");
             return;
         }
 
@@ -265,8 +253,6 @@ public final class EnemyManager {
                             + t.getClass().getSimpleName() + ": " + t.getMessage());
                 }
             }
-            logger.accept("Despawned " + removed + "/" + toRemove.size()
-                    + " mobs for " + playerId + " (cancelled " + cancelledFinal + " pending)");
         });
     }
 
@@ -274,15 +260,6 @@ public final class EnemyManager {
         return (ref == null) ? null : enemyStateMap.get(ref);
     }
 
-    /**
-     * Remove any mob belonging to {@code playerId} whose y-position has
-     * dropped below {@code fallY}. Must be called on the world thread.
-     *
-     * <p>Fallen mobs are silently despawned via {@code removeEntity}, then
-     * routed through {@link #onNativeDeath} so the floor's live-mob counter
-     * decrements and chain-spawn / floor-clear logic still fire. Loot is
-     * intentionally NOT granted — the native damage pipeline is bypassed.</p>
-     */
     public void killFallenMobs(UUID playerId, int fallY) {
         if (playerId == null) return;
         List<Ref<EntityStore>> fallen = new ArrayList<>();
@@ -311,17 +288,12 @@ public final class EnemyManager {
             }
             onNativeDeath(ref);
         }
-        logger.accept(String.format("Killed %d fallen mob(s) for %s (fallY=%d)",
-                fallen.size(), playerId, fallY));
     }
 
     public void onNativeDeath(Ref<EntityStore> ref) {
         if (ref == null) return;
         EnemyState state = enemyStateMap.remove(ref);
         if (state == null) return;
-
-        logger.accept(String.format("Killed mob [%s] group=%s for %s",
-                state.archetype().name(), state.groupId(), state.playerId()));
 
         onMobDied(state.playerId(), state.groupId());
 
@@ -361,21 +333,14 @@ public final class EnemyManager {
 
         SpawnGroup nextGroup = reg.groupsById.get(nextGroupId);
         if (nextGroup == null) {
-            logger.accept("Group " + groupId + " cleared but nextGroupId '"
-                    + nextGroupId + "' not registered for " + playerId);
             return;
         }
-
-        logger.accept("Group " + groupId + " cleared — chaining to " + nextGroupId
-                + " for " + playerId);
         chainSpawner.accept(playerId, nextGroup);
     }
 
     private void defaultChainSpawn(UUID playerId, SpawnGroup nextGroup) {
         FloorRegistration reg = floorRegistrationMap.get(playerId);
         if (reg == null || reg.playerRef == null || reg.world == null) {
-            logger.accept("Cannot chain-spawn " + nextGroup.id()
-                    + ": missing player/world context");
             return;
         }
         spawnGroup(reg.playerRef, reg.world, nextGroup);

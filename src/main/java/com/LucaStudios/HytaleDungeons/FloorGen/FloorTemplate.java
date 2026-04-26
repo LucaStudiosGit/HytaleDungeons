@@ -4,10 +4,6 @@ import com.LucaStudios.HytaleDungeons.Enemies.SpawnGroup;
 
 import java.util.List;
 
-/**
- * Immutable metadata for a floor template, loaded from JSON.
- * Coordinates are world-space.
- */
 public record FloorTemplate(
         int floorNumber,
         float spawnPointX, float spawnPointY, float spawnPointZ,

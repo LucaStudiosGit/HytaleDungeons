@@ -15,20 +15,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-/**
- * Thin wrapper over the player's native {@link EntityStatMap} HEALTH stat.
- *
- * <p>Damage application is entirely handled by the native damage pipeline —
- * {@link com.LucaStudios.HytaleDungeons.Combat.DamageInterceptor} rewrites the
- * incoming amount and lets {@code DamageSystems$ApplyDamage} subtract from the
- * stat. This class exists only to (a) refill the player's HP on respawn via
- * the native max value, (b) own potion cooldown state, and (c) expose a
- * {@link #usePotion} helper that reads/writes the native stat directly.</p>
- */
 public final class HealthManager {
 
-    // --- Tuning Knobs (from GDD) ---
-    /** Potion heals 80% of the player's current max HP. */
     public static final float POTION_HEAL_RATIO = 0.80f;
     public static final long POTION_COOLDOWN_MS = 30_000L;
 
@@ -41,30 +29,16 @@ public final class HealthManager {
         this.logger = logger;
     }
 
-    /**
-     * Initialize HP tracking for a player. We do NOT apply a max-HP modifier —
-     * calling {@code EntityStatMap.putModifier} triggers
-     * {@code EntityStatValue.computeModifiers(asset)} which resets max from
-     * the asset baseline (100) and wipes the pre-set native max (200). So we
-     * leave the native max alone and just fill current HP up to it.
-     * Must be called from the world thread.
-     */
     public void initPlayer(UUID playerId, PlayerRef playerRef,
                            Ref<EntityStore> entityRef, Store<EntityStore> store) {
         states.put(playerId, new PlayerHpState(playerRef));
-        float nativeMax = maximizeHp(entityRef, store);
-        log("Player %s HP initialized to %.0f/%.0f (native max)", playerId, nativeMax, nativeMax);
+        maximizeHp(entityRef, store);
     }
 
-    /** Remove HP tracking for a player. Called on disconnect. */
     public void removePlayer(UUID playerId) {
         states.remove(playerId);
     }
 
-    /**
-     * Refill the player's native HP to its native max. Called on respawn,
-     * new floor, and new run. Must be called from the world thread.
-     */
     public void resetHealth(UUID playerId) {
         PlayerHpState state = states.get(playerId);
         if (state == null) return;
@@ -73,18 +47,9 @@ public final class HealthManager {
         Ref<EntityStore> entityRef = playerRef.getReference();
         if (entityRef == null || !entityRef.isValid()) return;
         state.potionCooldownEndMs = 0L;
-        float nativeMax = maximizeHp(entityRef, entityRef.getStore());
-        log("Player %s HP reset to %.0f", playerId, nativeMax);
+        maximizeHp(entityRef, entityRef.getStore());
     }
 
-    /**
-     * Use a health potion. Heals {@link #POTION_HEAL_RATIO} of the player's
-     * max HP (clamped to max), writes it back, and starts the cooldown.
-     * Must be called from the world thread.
-     *
-     * @return HP actually healed, or -1 if potion use was blocked (wrong state
-     *         or on cooldown).
-     */
     public int usePotion(UUID playerId) {
         RunData runData = runStateManager.getRunData(playerId);
         if (runData == null || runData.getState() != RunState.FLOOR_ACTIVE) {
@@ -114,18 +79,9 @@ public final class HealthManager {
         state.potionCooldownEndMs = System.currentTimeMillis() + POTION_COOLDOWN_MS;
 
         int healed = Math.round(after - before);
-        log("Player %s used potion: healed %d HP, now %.0f/%.0f", playerId, healed, after, max);
         return healed;
     }
 
-    /**
-     * Apply a fraction of the player's max HP as environmental damage, bypassing
-     * the combat damage pipeline. Used for fall damage, hazards, etc.
-     * Must be called from the world thread.
-     *
-     * @return true if the damage was lethal (HP reached 0) — caller is expected
-     *         to trigger the death flow.
-     */
     public boolean applyEnvironmentalDamage(UUID playerId, float fraction) {
         EntityStatValue hp = readHp(playerId);
         if (hp == null) return false;
@@ -141,40 +97,26 @@ public final class HealthManager {
         EntityStatMap statMap = entityRef.getStore().getComponent(entityRef, EntityStatMap.getComponentType());
         if (statMap == null) return false;
         statMap.setStatValue(DefaultEntityStatTypes.getHealth(), next);
-        log("Player %s took %.0f environmental damage (%.0f -> %.0f / %.0f)",
-                playerId, curr - next, curr, next, max);
         return next <= 0f;
     }
 
-    /** True if the potion is currently on cooldown for this player. */
     public boolean isPotionOnCooldown(UUID playerId) {
         PlayerHpState state = states.get(playerId);
         if (state == null) return false;
         return System.currentTimeMillis() < state.potionCooldownEndMs;
     }
 
-    /** Remaining potion cooldown in milliseconds (0 if ready). */
     public long getPotionCooldownRemainingMs(UUID playerId) {
         PlayerHpState state = states.get(playerId);
         if (state == null) return 0L;
         return Math.max(0L, state.potionCooldownEndMs - System.currentTimeMillis());
     }
 
-    /**
-     * Read current HP from the native HEALTH stat. Returns -1 if the player
-     * is unknown, invalid, or the stat is missing. Must be called from the
-     * world thread.
-     */
     public float getCurrentHp(UUID playerId) {
         EntityStatValue hp = readHp(playerId);
         return hp == null ? -1f : hp.get();
     }
 
-    /**
-     * Read max HP from the native HEALTH stat. Returns -1 if the player is
-     * unknown, invalid, or the stat is missing. Must be called from the
-     * world thread.
-     */
     public float getMaxHp(UUID playerId) {
         EntityStatValue hp = readHp(playerId);
         return hp == null ? -1f : hp.getMax();
@@ -187,8 +129,6 @@ public final class HealthManager {
         if (playerRef == null || !playerRef.isValid()) return null;
         Ref<EntityStore> entityRef = playerRef.getReference();
         if (entityRef == null || !entityRef.isValid()) return null;
-        // isValid() can lie after a fresh archetype transition — guard the
-        // component read so HUD ticks and respawn paths don't spam SEVERE.
         try {
             EntityStatMap statMap = entityRef.getStore().getComponent(entityRef, EntityStatMap.getComponentType());
             if (statMap == null) return null;
@@ -198,13 +138,6 @@ public final class HealthManager {
         }
     }
 
-    // ── Native stat helpers ──────────────────────────────────────────────
-
-    /**
-     * Fill the player's HEALTH stat to its current native max without touching
-     * modifiers (avoids triggering {@code computeModifiers} which would reset
-     * max from the asset baseline). Returns the native max value.
-     */
     private float maximizeHp(Ref<EntityStore> entityRef, Store<EntityStore> store) {
         if (entityRef == null || !entityRef.isValid() || store == null) return 0f;
         try {
@@ -217,7 +150,6 @@ public final class HealthManager {
             statMap.maximizeStatValue(healthIdx);
             return nativeMax;
         } catch (Throwable t) {
-            log("maximizeHp: ECS read failed — %s", t.getClass().getSimpleName() + ": " + t.getMessage());
             return 0f;
         }
     }
@@ -226,7 +158,6 @@ public final class HealthManager {
         logger.accept(String.format(format, args));
     }
 
-    /** Per-player HP-adjacent state — native stat owns current/max HP. */
     private static final class PlayerHpState {
         final PlayerRef playerRef;
         long potionCooldownEndMs;

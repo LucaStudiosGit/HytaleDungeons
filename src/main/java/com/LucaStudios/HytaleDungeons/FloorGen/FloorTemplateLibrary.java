@@ -15,10 +15,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-/**
- * Loads and indexes floor templates from {@code config/floors.json}.
- * Thread-safe after initialization (immutable after load).
- */
 public final class FloorTemplateLibrary {
 
     private static FloorTemplateLibrary instance;
@@ -50,8 +46,6 @@ public final class FloorTemplateLibrary {
             for (JsonElement element : jsonFloors) {
                 floors.add(parseTemplate(element.getAsJsonObject()));
             }
-
-            logger.accept("Loaded " + floors.size() + " floor templates from config/floors.json");
         } catch (Exception e) {
             logger.accept("ERROR loading floors.json: " + e.getMessage() + " — using fallback");
             instance = createFallback();

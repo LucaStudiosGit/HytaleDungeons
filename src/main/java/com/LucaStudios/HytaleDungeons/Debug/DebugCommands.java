@@ -66,28 +66,11 @@ public final class DebugCommands {
 
         StringBuilder sb = new StringBuilder();
         sb.append("--- Floor ").append(floor.floorNumber()).append(" ---\n");
-//        sb.append("Rooms: ").append(floor.getRooms().size()).append("\n");
-//        sb.append("Origin: (").append(floor.getOriginX()).append(", ")
-//                .append(floor.getOriginY()).append(", ").append(floor.getOriginZ()).append(")\n");
-//        sb.append("Total size: ").append(floor.getTotalSizeX()).append("x")
-//                .append(floor.getTotalSizeY()).append("x").append(floor.getTotalSizeZ()).append("\n");
 
         float[] sp = floor.playerSpawnPoint();
         sb.append("Spawn: (").append(sp[0]).append(", ").append(sp[1]).append(", ").append(sp[2]).append(")\n");
 
-//        int[] ez = floor.getExitZoneOrigin();
-//        sb.append("Exit zone: (").append(ez[0]).append(", ").append(ez[1]).append(", ").append(ez[2]).append(") ")
-//                .append(floor.getExitZoneWidth()).append("x").append(floor.getExitZoneDepth()).append("\n");
-
         sb.append("Mob spawns: ").append(floor.getMobSpawnCount()).append("\n");
-
-//        for (int i = 0; i < floor.getRooms().size(); i++) {
-//            PlacedRoom room = floor.getRooms().get(i);
-//            sb.append("  [").append(i).append("] ").append(room.template().id())
-//                    .append(" (").append(room.template().type()).append(") at Z=").append(room.worldZ())
-//                    .append(" size=").append(room.template().sizeX()).append("x")
-//                    .append(room.template().sizeZ()).append("\n");
-//        }
 
         send(sender, sb.toString());
     }
@@ -120,8 +103,6 @@ public final class DebugCommands {
             FloorData floorData = floorGenerator.getActiveFloor(playerId);
             if (floorData != null) {
                 runStateManager.setMobCount(playerId, floorData.getMobSpawnCount());
-//                send(sender, "Regenerated floor " + floor + " with " + floorData.size()
-//                        + " rooms and " + floorData.getMobSpawnCount() + " mob spawns.");
             }
         });
     }

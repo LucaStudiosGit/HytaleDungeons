@@ -102,7 +102,7 @@ public class Main extends JavaPlugin {
         playerDataManager = new PlayerDataManager(msg -> getLogger().at(Level.INFO).log(msg));
 
         enemyManager = new EnemyManager(runStateManager, msg -> getLogger().at(Level.INFO).log(msg));
-        floorGenerator = new FloorGenerator(enemyManager, msg -> getLogger().at(Level.INFO).log(msg));
+        floorGenerator = new FloorGenerator(enemyManager);
 
         // Health system — tracks HP, damage, and potions
         healthManager = new HealthManager(runStateManager, msg -> getLogger().at(Level.INFO).log(msg));

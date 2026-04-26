@@ -1,6 +1,5 @@
 package com.LucaStudios.HytaleDungeons.Loot;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -19,10 +18,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-/**
- * Immutable item database loaded from config/items.json at startup.
- * Thread-safe for reads from any context after initialization.
- */
 public final class ItemDatabase {
 
     public static final double DEFAULT_LEVEL_SCALE_FACTOR = 0.1;
@@ -51,7 +46,6 @@ public final class ItemDatabase {
             byCategory.get(item.getCategory()).add(item);
         }
 
-        // Make everything unmodifiable
         this.itemsById = Collections.unmodifiableMap(byId);
         this.itemsByHytaleId = Collections.unmodifiableMap(byHytaleId);
         Map<ItemCategory, List<ItemDefinition>> unmodCat = new LinkedHashMap<>();
@@ -61,10 +55,6 @@ public final class ItemDatabase {
         this.itemsByCategory = Collections.unmodifiableMap(unmodCat);
     }
 
-    /**
-     * Loads the item database from the classpath config file.
-     * Call once at plugin startup.
-     */
     public static void load(Consumer<String> logger) {
         List<ItemDefinition> items = loadFromClasspath(logger);
         if (items.isEmpty()) {
@@ -72,7 +62,6 @@ public final class ItemDatabase {
             items = createFallbackItems();
         }
 
-        // Check for duplicate IDs
         var seen = new java.util.HashSet<String>();
         for (ItemDefinition item : items) {
             if (!seen.add(item.getId())) {
@@ -81,7 +70,6 @@ public final class ItemDatabase {
         }
 
         instance = new ItemDatabase(items);
-        logger.accept("ItemDatabase loaded: " + instance.itemsById.size() + " items");
     }
 
     public static ItemDatabase getInstance() {
@@ -91,41 +79,24 @@ public final class ItemDatabase {
         return instance;
     }
 
-    /**
-     * Get an item by its unique ID. Returns FISTS if not found.
-     */
     public ItemDefinition get(String id) {
         return itemsById.getOrDefault(id, ItemDefinition.FISTS);
     }
 
-    /**
-     * Get an item by its Hytale item ID (e.g., "Weapon_Sword_Iron"). Returns FISTS if not found.
-     */
     public ItemDefinition getByHytaleId(String hytaleItemId) {
         return itemsByHytaleId.getOrDefault(hytaleItemId, ItemDefinition.FISTS);
     }
 
-    /**
-     * Get all items in a category.
-     */
     public List<ItemDefinition> getByCategory(ItemCategory category) {
         return itemsByCategory.getOrDefault(category, Collections.emptyList());
     }
 
-    /**
-     * Get all items matching a category and rarity.
-     */
     public List<ItemDefinition> getByCategoryAndRarity(ItemCategory category, Rarity rarity) {
         return getByCategory(category).stream()
                 .filter(item -> item.getRarity() == rarity)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Select a random item from a category using rarity-weighted drop chances.
-     * First rolls a rarity based on drop weights, then picks a random item of that rarity.
-     * If no items exist for the rolled rarity, falls back to any item in the category.
-     */
     public ItemDefinition getRandomForCategory(ItemCategory category) {
         List<ItemDefinition> pool = getByCategory(category);
         if (pool.isEmpty()) {
@@ -135,7 +106,7 @@ public final class ItemDatabase {
         Rarity rolledRarity = rollRarity();
         List<ItemDefinition> rarityPool = pool.stream()
                 .filter(item -> item.getRarity() == rolledRarity)
-                .collect(Collectors.toList());
+                .toList();
 
         if (rarityPool.isEmpty()) {
             return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
@@ -143,35 +114,14 @@ public final class ItemDatabase {
         return rarityPool.get(ThreadLocalRandom.current().nextInt(rarityPool.size()));
     }
 
-    /**
-     * Get the total number of items in the database.
-     */
     public int size() {
         return itemsById.size();
     }
 
-    /**
-     * Roll a set of distinct loot offers for the between-floors reward screen.
-     * Picks {@code count} items from the full pool across all categories using
-     * rarity-weighted selection (same weights as {@link #rollRarity()}). Each
-     * pick is wrapped in a {@link LootOffer} carrying its rolled instance
-     * level: {@code clearedFloor + uniform(-1, 0, +1)}, clamped to ≥1.
-     *
-     * <p>If the pool is smaller than {@code count}, returns the whole pool.</p>
-     */
     public List<LootOffer> rollOffersForFloor(int count, int clearedFloor) {
         return rollOffersForFloor(count, clearedFloor, Map.of());
     }
 
-    /**
-     * Same as {@link #rollOffersForFloor(int, int)} but skips a candidate when
-     * the player already has it equipped at the rolled level — i.e. an
-     * {@code (item, level)} the player just received is hidden.
-     *
-     * @param equippedItemLevels map of {@code itemId -> equipped level} for the
-     *                            player's currently equipped slots. Pass an
-     *                            empty map to disable filtering.
-     */
     public List<LootOffer> rollOffersForFloor(int count, int clearedFloor,
                                               Map<String, Integer> equippedItemLevels) {
         List<ItemDefinition> all = new ArrayList<>(itemsById.values());
@@ -190,7 +140,7 @@ public final class ItemDatabase {
                 tier = all.stream()
                         .filter(i -> !containsItem(picks, i)
                                 && !isAlreadyEquippedAtLevel(equippedItemLevels, i, level))
-                        .collect(Collectors.toList());
+                        .toList();
                 if (tier.isEmpty()) continue; // try another level/rarity roll
             }
             ItemDefinition pick = tier.get(ThreadLocalRandom.current().nextInt(tier.size()));
@@ -212,7 +162,6 @@ public final class ItemDatabase {
         return false;
     }
 
-    /** Roll an item-instance level around the floor that was just cleared. */
     private static int rollLevel(int clearedFloor) {
         int variance = ThreadLocalRandom.current().nextInt(-1, 2); // -1, 0, or +1
         return Math.max(1, clearedFloor + variance);
@@ -238,7 +187,6 @@ public final class ItemDatabase {
     private static List<ItemDefinition> loadFromClasspath(Consumer<String> logger) {
         try (InputStream is = ItemDatabase.class.getClassLoader().getResourceAsStream(CONFIG_PATH)) {
             if (is == null) {
-                logger.accept("Config file not found on classpath: " + CONFIG_PATH);
                 return Collections.emptyList();
             }
             return parseItems(new InputStreamReader(is, StandardCharsets.UTF_8), logger);

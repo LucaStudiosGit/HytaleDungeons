@@ -36,7 +36,6 @@ public final class MeleeCooldownHandler {
 
         UUID playerId = playerRef.getUuid();
 
-        // Look up the player's active hotbar item to get weapon cooldown
         ItemDefinition weapon = getEquippedWeapon(playerRef);
 
         if (!combatManager.canMeleeAttack(playerId, weapon)) {

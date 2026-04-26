@@ -44,7 +44,6 @@ public final class PlayerDataManager {
     public void initPlayer(UUID playerId) {
         players.put(playerId, new PlayerLoadout(
                 playerId, BACKPACK_SIZE, DEFAULT_WEAPON, DEFAULT_ARMOR, DEFAULT_CROSSBOW));
-        logger.accept("PlayerData initialized for " + playerId);
     }
 
     /**
@@ -57,7 +56,6 @@ public final class PlayerDataManager {
             return;
         }
         loadout.reset(DEFAULT_WEAPON, DEFAULT_ARMOR, DEFAULT_CROSSBOW);
-        logger.accept("PlayerData reset for " + playerId);
     }
 
     /**
@@ -79,11 +77,7 @@ public final class PlayerDataManager {
         PlayerLoadout loadout = players.get(playerId);
         if (loadout == null) return;
 
-        int levelsGained = loadout.grantXP(amount, BASE_XP, XP_PER_LEVEL);
-        if (levelsGained > 0) {
-            logger.accept("Player " + playerId + " leveled up to " + loadout.getPlayerLevel()
-                    + " (+" + levelsGained + " levels)");
-        }
+        loadout.grantXP(amount, BASE_XP, XP_PER_LEVEL);
     }
 
     /**
@@ -149,11 +143,7 @@ public final class PlayerDataManager {
         PlayerLoadout loadout = players.get(playerId);
         if (loadout == null) return null;
 
-        String discarded = loadout.addToBackpack(itemId);
-        if (discarded != null) {
-            logger.accept("Auto-discarded " + discarded + " from " + playerId + "'s backpack");
-        }
-        return discarded;
+        return loadout.addToBackpack(itemId);
     }
 
     /**

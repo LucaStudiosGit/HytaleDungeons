@@ -76,7 +76,6 @@ public final class DeathPage {
             deadlines.remove(playerId);
             return;
         }
-        log("Opened death page for player " + playerId + " with duration " + durationMs + "ms and lives remaining: " + livesRemaining);
         activePages.put(playerId, page);
 
         // HyUI cannot register recurring refresh callbacks when a page is opened
@@ -98,7 +97,6 @@ public final class DeathPage {
         if (deadline == null) return;
 
         long remainingMs = deadline - System.currentTimeMillis();
-        log("tickRefresh: %s remaining=%dms", playerId, remainingMs);
 
         if (remainingMs <= 0) {
             deadlines.remove(playerId);
@@ -119,7 +117,6 @@ public final class DeathPage {
 
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) {
-            log("tickRefresh: playerRef no longer valid for %s", playerId);
             return;
         }
         ref.getStore().getExternalData().getWorld().execute(() -> page.updatePage(false));

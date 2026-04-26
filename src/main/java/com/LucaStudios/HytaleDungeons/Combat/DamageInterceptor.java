@@ -107,7 +107,6 @@ public final class DamageInterceptor extends DamageEventSystem {
 
         UUID playerId = attackerState.playerId();
 
-        // i-frames: cancel damage while victim is mid-dodge.
         PlayerRef victimPlayerRef = store.getComponent(victimRef, PlayerRef.getComponentType());
         if (victimPlayerRef != null && dodgeManager != null
                 && dodgeManager.isInIFrames(victimPlayerRef.getUuid())) {
@@ -115,10 +114,6 @@ public final class DamageInterceptor extends DamageEventSystem {
             return;
         }
 
-        // Cancel damage while the player isn't actively running a floor —
-        // during DEAD / GAME_OVER / VICTORY / UPGRADING / LOBBY the player
-        // is frozen behind a modal page and shouldn't be taking hits from
-        // mobs whose native AI is still pathing toward them.
         RunData runData = runStateManager.getRunData(playerId);
         if (runData == null || runData.getState() != RunState.FLOOR_ACTIVE) {
             damage.setCancelled(true);

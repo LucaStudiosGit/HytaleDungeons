@@ -13,15 +13,6 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.function.Consumer;
 
-/**
- * Observes the native {@link DeathComponent} being added to a player entity
- * and hands off to {@link RunStateManager#onPlayerDeath} so our respawn timer
- * / lives bookkeeping fire at the same moment as the native death animation.
- *
- * <p>The native damage pipeline ({@code DamageSystems$ApplyDamage}) is still
- * responsible for subtracting HP, adding the death component, and playing the
- * death animation — we just piggyback on the state change.</p>
- */
 public final class PlayerDeathObserver extends DeathSystems.OnDeathSystem {
 
     private final RunStateManager runStateManager;
@@ -46,8 +37,6 @@ public final class PlayerDeathObserver extends DeathSystems.OnDeathSystem {
         Player player = store.getComponent(ref, Player.getComponentType());
         if (player == null) return;
 
-        // Suppress Hytale's native death menu — our RunStateManager drives
-        // the respawn flow and (eventually) our own death UI.
         component.setShowDeathMenu(false);
 
         @SuppressWarnings("removal")

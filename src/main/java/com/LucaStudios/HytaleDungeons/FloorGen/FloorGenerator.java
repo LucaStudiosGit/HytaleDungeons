@@ -19,12 +19,8 @@ public final class FloorGenerator {
     public static final int FLOOR_Y = 200;
     public static final int FLOOR_X_SPACING = 200;
 
-    // Teleports show up as large single-poll Z jumps. Any delta above this
-    // is treated as a teleport and skipped so it doesn't false-fire the trigger.
     private static final double TELEPORT_DELTA_THRESHOLD = 4.0;
 
-    // Re-arm margin above fallY before the watcher will fire again — prevents
-    // repeat fires while the teleport-to-spawn is still being processed.
     private static final double FALL_REARM_MARGIN = 5.0;
 
     private final ConcurrentHashMap<UUID, FloorData> activeFloors = new ConcurrentHashMap<>();
@@ -34,13 +30,11 @@ public final class FloorGenerator {
     private BiConsumer<UUID, PlayerRef> onPlayerFell;
     private int nextPlayerIndex = 0;
 
-    private final Consumer<String> logger;
     private final FloorPlacer placer;
     private final EnemyManager enemyManager;
 
-    public FloorGenerator(EnemyManager enemyManager, Consumer<String> logger) {
-        this.logger = logger;
-        this.placer = new FloorPlacer(logger);
+    public FloorGenerator(EnemyManager enemyManager) {
+        this.placer = new FloorPlacer();
         this.enemyManager = enemyManager;
         ScheduledExecutorService triggerScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "floor-trigger-watcher");
@@ -136,9 +130,6 @@ public final class FloorGenerator {
             fallWatches.remove(playerId);
             return;
         }
-        // Mobs sharing this player's floor die the moment they drop below
-        // fallY — run this every poll so mobs knocked off the edge don't
-        // linger forever in enemyStateMap (and don't block floor-clear).
         enemyManager.killFallenMobs(playerId, watch.fallY);
 
         double y = watch.playerRef.getTransform().getPosition().y;
@@ -150,8 +141,6 @@ public final class FloorGenerator {
         }
         if (y < watch.fallY) {
             watch.active = false;
-            logger.accept(String.format(
-                    "Player %s fell below fallY=%d (y=%.1f)", playerId, watch.fallY, y));
             BiConsumer<UUID, PlayerRef> cb = onPlayerFell;
             if (cb != null) {
                 cb.accept(playerId, watch.playerRef);
@@ -166,11 +155,8 @@ public final class FloorGenerator {
         if (watch == null) return;
         SpawnGroup group = floor.findFirstZoneGroup();
         if (group == null) {
-            logger.accept("zPlane trigger fired but no zone spawn group on floor " + floor.floorNumber());
             return;
         }
-        logger.accept("zPlane trigger fired for floor " + floor.floorNumber()
-                + " — spawning group " + group.id());
         enemyManager.spawnGroup(watch.playerRef, watch.world, group);
     }
 
@@ -197,14 +183,11 @@ public final class FloorGenerator {
             fallWatches.remove(playerId);
         }
 
-        logger.accept("Floor " + floor.floorNumber() + " built for " + playerId);
 
         if (world != null) {
             world.execute(() -> {
                 int preRemoved = enemyManager.removeTrackedMobs();
                 enemyManager.cleanAllEntities();
-                logger.accept("Mob cleanup: pre-removed " + preRemoved + " tracked mobs");
-
                 enemyManager.registerFloor(playerId, playerRef, world, floor.spawnGroups());
 
                 if (playerRef != null) {

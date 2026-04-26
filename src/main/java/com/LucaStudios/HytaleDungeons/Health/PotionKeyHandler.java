@@ -14,15 +14,6 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import javax.annotation.Nonnull;
 
-/**
- * Watches for hotbar slot-4 presses (index 3, key "4") and triggers
- * {@link HealthManager#usePotion}. Registered as a {@link PlayerPacketWatcher}
- * so it never consumes the packet — the existing
- * {@code NoHotbarSwitchRestriction} filter still blocks the actual slot switch.
- *
- * <p>Must be registered <strong>before</strong> the hotbar lock filter so
- * that the watcher sees the packet before it gets consumed.</p>
- */
 public final class PotionKeyHandler implements PlayerPacketWatcher {
 
     private static final byte POTION_SLOT = 3; // key "4" = 0-based index 3
@@ -33,10 +24,6 @@ public final class PotionKeyHandler implements PlayerPacketWatcher {
         this.healthManager = healthManager;
     }
 
-    /**
-     * Register this watcher. Call before {@code PlayerRestrictions.register()}
-     * so it runs ahead of the hotbar lock filter in the packet chain.
-     */
     public void register() {
         PacketAdapters.registerInbound(this);
     }

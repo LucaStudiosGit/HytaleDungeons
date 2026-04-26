@@ -171,7 +171,6 @@ public final class RunStateManager {
         data.incrementDeaths();
         fireStateChange(playerId, oldState, RunState.DEAD, data);
 
-        log("Player %s died on floor %d (%d lives left)", playerId, data.getCurrentFloor(), data.getLivesRemaining());
 
         // Final death — skip the death screen and resolve straight to game over
         // (resolveDeathScreen opens the GameOverPage on the no-lives branch).
@@ -189,8 +188,6 @@ public final class RunStateManager {
                     plugin.getLogger().at(Level.WARNING).log(
                             "DeathPage: entityRef.getStore() returned null for player " + playerId);
                 } else {
-                    log("Showing death page for player %s with %d lives remaining",
-                            playerId, Math.max(0, data.getLivesRemaining() - 1));
                     final int livesRemaining = Math.max(0, data.getLivesRemaining() - 1);
                     World world = store.getExternalData().getWorld();
                     final com.LucaStudios.HytaleDungeons.UI.DeathPage deathPageRef = deathPage;
@@ -241,7 +238,6 @@ public final class RunStateManager {
         }
         data.incrementMobsKilled();
         data.decrementMobs();
-        log("Mob killed for player %s — %d remaining", playerId, data.getMobsRemaining());
 
         if (data.getMobsRemaining() <= 0) {
             showBetweenFloorsScreen(playerId, data);
@@ -266,9 +262,6 @@ public final class RunStateManager {
         RunState oldState = data.getState();
         data.setState(RunState.UPGRADING);
         fireStateChange(playerId, oldState, RunState.UPGRADING, data);
-
-        log("Player %s cleared floor %d — showing between-floors screen",
-                playerId, data.getCurrentFloor());
 
         if (betweenFloorsPage != null && playerRef != null && playerRef.isValid()) {
             Ref<EntityStore> entityRef = playerRef.getReference();

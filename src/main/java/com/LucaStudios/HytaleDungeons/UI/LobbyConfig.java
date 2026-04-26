@@ -63,9 +63,6 @@ public final class LobbyConfig {
                     : null;
 
             instance = new LobbyConfig(x, y, z, yaw, pitch, weather);
-            logger.accept(String.format(
-                    "Loaded lobby config: spawn=(%.1f, %.1f, %.1f) yaw=%.1f pitch=%.1f weather=%s",
-                    x, y, z, yaw, pitch, weather));
         } catch (Exception e) {
             logger.accept("ERROR loading " + CONFIG_PATH + ": " + e.getMessage() + " — using fallback");
             instance = createFallback();

@@ -36,6 +36,5 @@ public final class NoNaturalSpawnRestriction {
         if (config == null) return;
         if (!config.isSpawningNPC()) return;
         config.setSpawningNPC(false);
-        logger.accept("Disabled natural NPC spawning for world: " + world.getName());
     }
 }
