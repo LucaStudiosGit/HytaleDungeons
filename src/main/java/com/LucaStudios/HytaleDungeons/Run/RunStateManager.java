@@ -499,6 +499,17 @@ public final class RunStateManager {
     }
 
     /**
+     * Debug: skip directly to the between-floors screen as if the player had
+     * cleared every mob on the current floor.
+     */
+    public void debugFinishFloor(UUID playerId) {
+        RunData data = runs.get(playerId);
+        if (data == null || data.getState() != RunState.FLOOR_ACTIVE) return;
+        data.setMobsRemaining(0);
+        showBetweenFloorsScreen(playerId, data);
+    }
+
+    /**
      * Debug: force-open the game-over page with fake stats without going through
      * the death flow.
      */

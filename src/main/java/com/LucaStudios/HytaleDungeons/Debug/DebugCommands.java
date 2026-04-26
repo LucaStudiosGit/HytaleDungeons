@@ -50,6 +50,7 @@ public final class DebugCommands {
             case "!floorinfo" -> handleFloorInfo(sender, playerId);
             case "!runinfo" -> handleRunInfo(sender, playerId);
             case "!regen" -> handleRegen(sender, playerId);
+            case "!finishfloor" -> handleFinishFloor(sender, playerId);
             case "!gameover" -> handleGameOver(sender, playerId);
             case "!help" -> handleHelp(sender);
             default -> send(sender, "Unknown command: " + content + " — type !help");
@@ -125,6 +126,11 @@ public final class DebugCommands {
         });
     }
 
+    private void handleFinishFloor(PlayerRef sender, UUID playerId) {
+        send(sender, "Force-finishing current floor (debug)...");
+        runStateManager.debugFinishFloor(playerId);
+    }
+
     private void handleGameOver(PlayerRef sender, UUID playerId) {
         send(sender, "Opening game-over page (debug)...");
         runStateManager.debugOpenGameOver(playerId, sender);
@@ -135,6 +141,7 @@ public final class DebugCommands {
                 + "!floorinfo — show current floor layout\n"
                 + "!runinfo — show run state\n"
                 + "!regen — regenerate current floor\n"
+                + "!finishfloor — clear current floor and open upgrade screen\n"
                 + "!gameover — force-open game-over page\n"
                 + "!help — this message");
     }
