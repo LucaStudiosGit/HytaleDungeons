@@ -52,7 +52,14 @@ The mob drops are not intentional
 ## Some Instructions
 
 *   When you press on the discord button in the start screen, the link is sent in the chat
-*   Press the "4" bounded key to drink a health potion
+*   Press the "Hotbar Slot 4" bounded key to drink a health potion
+
+***
+
+## Recommendations
+
+*   Play on fullscreen mod
+*   Change controls: "Use ability 1" -> E | "Hotbar Slot 4" -> Q
 
 ***
 
