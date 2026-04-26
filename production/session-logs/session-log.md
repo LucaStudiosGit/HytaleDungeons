@@ -6355,3 +6355,82 @@ src/main/java/com/LucaStudios/HytaleDungeons/UI/LobbyConfig.java
 src/main/java/com/LucaStudios/HytaleDungeons/UI/MainMenuPage.java
 ---
 
+## Session End: 20260426_211949
+### Commits
+d9b978e Remove verbose logs/docs and simplify floor APIs
+4c26b5a Add debug finish-floor cmd; update Discord UI
+e32abc9 Update README.md
+5a69cde Add dodge mechanic with input observer
+---
+
+## Session End: 20260426_212050
+### Commits
+d9b978e Remove verbose logs/docs and simplify floor APIs
+4c26b5a Add debug finish-floor cmd; update Discord UI
+e32abc9 Update README.md
+5a69cde Add dodge mechanic with input observer
+### Uncommitted Changes
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+---
+
+## Session End: 20260426_212254
+### Commits
+d9b978e Remove verbose logs/docs and simplify floor APIs
+4c26b5a Add debug finish-floor cmd; update Discord UI
+e32abc9 Update README.md
+5a69cde Add dodge mechanic with input observer
+### Uncommitted Changes
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorPlacer.java
+---
+
+## Session End: 20260426_212439
+### Commits
+d9b978e Remove verbose logs/docs and simplify floor APIs
+4c26b5a Add debug finish-floor cmd; update Discord UI
+e32abc9 Update README.md
+5a69cde Add dodge mechanic with input observer
+### Uncommitted Changes
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorPlacer.java
+---
+
+## Session End: 20260426_214044
+### Commits
+d9b978e Remove verbose logs/docs and simplify floor APIs
+4c26b5a Add debug finish-floor cmd; update Discord UI
+e32abc9 Update README.md
+5a69cde Add dodge mechanic with input observer
+### Uncommitted Changes
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorPlacer.java
+---
+
+## Session End: 20260426_214626
+### Commits
+d9b978e Remove verbose logs/docs and simplify floor APIs
+4c26b5a Add debug finish-floor cmd; update Discord UI
+e32abc9 Update README.md
+5a69cde Add dodge mechanic with input observer
+### Uncommitted Changes
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorPlacer.java
+---
+
+## Session End: 20260426_215101
+### Commits
+d9b978e Remove verbose logs/docs and simplify floor APIs
+4c26b5a Add debug finish-floor cmd; update Discord UI
+e32abc9 Update README.md
+5a69cde Add dodge mechanic with input observer
+### Uncommitted Changes
+production/session-logs/session-log.md
+src/main/java/com/LucaStudios/HytaleDungeons/Enemies/EnemyManager.java
+src/main/java/com/LucaStudios/HytaleDungeons/FloorGen/FloorPlacer.java
+---
+

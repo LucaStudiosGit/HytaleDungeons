@@ -9,11 +9,14 @@ import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.command.system.CommandManager;
 import com.hypixel.hytale.server.core.console.ConsoleSender;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatValue;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
 import com.hypixel.hytale.server.core.modules.entitystats.modifier.Modifier;
 import com.hypixel.hytale.server.core.modules.entitystats.modifier.StaticModifier;
+import com.hypixel.hytale.server.core.asset.type.blocktype.config.BlockType;
+import com.hypixel.hytale.protocol.BlockMaterial;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -133,9 +136,10 @@ public final class EnemyManager {
                     if (!playerRef.isValid() || !entityRef.isValid()) return;
                     int curGen = generationByPlayer.getOrDefault(playerId, 0);
                     if (curGen != generation) return;
+                    Vector3d spawnPos = resolveAirPosition(world, position, zone, 10);
                     try {
                         Pair<Ref<EntityStore>, ?> spawned =
-                                NPCPlugin.get().spawnNPC(store, arch.entityID, null, position, rotation);
+                                NPCPlugin.get().spawnNPC(store, arch.entityID, null, spawnPos, rotation);
                         if (spawned != null && spawned.left() != null) {
                             Ref<EntityStore> ref = spawned.left();
                             enemyStateMap.put(ref, new EnemyState(arch, fAtk, playerId, groupId));
@@ -344,6 +348,32 @@ public final class EnemyManager {
             return;
         }
         spawnGroup(reg.playerRef, reg.world, nextGroup);
+    }
+
+    private Vector3d resolveAirPosition(World world, Vector3d initial, SpawnZone zone, int maxAttempts) {
+        Vector3d last = initial;
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            Vector3d pos = attempt == 0 ? initial : new Vector3d(
+                    randomBetween(zone.x0(), zone.x1()),
+                    randomBetween(zone.y0(), zone.y1()),
+                    randomBetween(zone.z0(), zone.z1())
+            );
+            BlockType bt = world.getBlockType((int) pos.x, (int) pos.y, (int) pos.z);
+            if (bt == null || bt.getMaterial() != BlockMaterial.Solid) {
+                return pos;
+            }
+            last = pos;
+        }
+        // Scan upward from last candidate until an air block is found
+        int x = (int) last.x;
+        int z = (int) last.z;
+        for (int y = (int) last.y; y <= (int) last.y + 64; y++) {
+            BlockType bt = world.getBlockType(x, y, z);
+            if (bt == null || bt.getMaterial() != BlockMaterial.Solid) {
+                return new Vector3d(x, y, z);
+            }
+        }
+        return last;
     }
 
     private Archetype rollArchetype() {
