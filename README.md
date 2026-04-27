@@ -45,7 +45,7 @@ Think Minecraft Dungeons\`s tower — but in Hytale. Each floor is procedurally 
 
 ## Known Issues
 
-The mob drops are not intentional
+NONE ! ! ! 
 
 ***
 
@@ -53,6 +53,7 @@ The mob drops are not intentional
 
 *   When you press on the discord button in the start screen, the link is sent in the chat
 *   Press the "Hotbar Slot 4" bounded key to drink a health potion
+*   Press the "Jump" bounded key to roll
 
 ***
 
