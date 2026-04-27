@@ -24,39 +24,35 @@
     },
     "ApplySeparation": {
       "Value": false,
-      "Description": "When set to false, NPCs wont try to avoid each other or player."
+      "Description": "When set to false, NPCs wont try to avoid each other or player, it can lead to them stacking together, but can help to avoid jerky-like movemenet in enclosed space."
     },
     "NameTranslationKey": {
-      "Value": "server.npcRoles.Skeleton_Burnt_Archer.name",
+      "Value": "server.npcRoles.Skeleton_Burnt_Soldier.name",
       "Description": "Translation key for NPC name display"
     }
   },
   "Modify": {
-    "MaxHealth": 74,
-    "HearingRange": 15,
-    "ViewSector": 360,
-    "ViewRange": 25,
-    "AlertedTime": [ 0, 0 ],
+    "MaxHealth": 124,
+    "HearingRange": 8,
+    "ViewSector": 270,
     "WakingPeriod": [ 0, 24 ],
-    "Appearance": "Skeleton_Burnt_Archer",
-    "Weapons": [ "Weapon_Shortbow_Iron_Rusty" ],
+    "Appearance": "Skeleton_Burnt_Soldier",
+    "Weapons": [ "Weapon_Sword_Steel_Rusty" ],
+    "OffHand": [ "Weapon_Shield_Rusty" ],
+    "DefaultOffHandSlot": 0,
     "FlockArray": { "Compute": "FlockArray" },
     "FollowPatrolPath": { "Compute": "FollowPatrolPath" },
     "Patrol": { "Compute": "Patrol" },
     "WanderRadius": { "Compute": "WanderRadius" },
-    "Attack": "Skeleton_Burnt_Archer_Bow_Shoot",
-    "CombatBackOffAfterAttack": false,
-    "AttackDistance": 15,
-    "CombatFleeIfTooCloseDistance": 4,
-    "DesiredAttackDistanceRange": [ 5, 14.5 ],
-    "CombatBehaviorDistance": 15,
-    "TargetRange": 15,
-    "LeashMinPlayerDistance": 18,
+    "Attack": "Root_NPC_Skeleton_Burnt_Soldier_Attack",
+    "AttackDistance": 3,
+    "DesiredAttackDistanceRange": [ 2, 2.5 ],
+    "CombatMessageTargetGroups": [ "Skeleton" ],
     "ApplySeparation": { "Compute": "ApplySeparation" },
     "_CombatConfig": { "EntityEffect": "Immunity_Fire" },
     "IsMemory": true,
     "MemoriesCategory": "Undead",
-    "MemoriesNameOverride": "Skeleton_Burnt_Archer",
+    "MemoriesNameOverride": "Skeleton_Burnt_Soldier",
     "BreathesInWater": true,
     "NameTranslationKey": { "Compute": "NameTranslationKey" }
   }
