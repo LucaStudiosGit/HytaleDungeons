@@ -1,7 +1,7 @@
 [
   {
     "floorNumber": 1,
-    "name": "EndPortal",
+    "name": "TheOG",
     "worldOrigin": { "x": 0, "y": 100, "z": 0 },
     "playerSpawnPoint": { "x": 19.5, "y": 210, "z": 4.5 },
     "fallY": 202,
@@ -38,7 +38,7 @@
 
   {
     "floorNumber": 2,
-    "name": "Platform",
+    "name": "PlattyFlatty",
     "worldOrigin": { "x": 0, "y": 100, "z": 0 },
     "playerSpawnPoint": { "x": 18.5, "y": 209.5, "z": 66.5 },
     "fallY": 205,
@@ -69,6 +69,50 @@
           { "x0": 32.5, "y0": 208, "z0": 91.5,
             "x1": 27.5, "y1": 208, "z1": 97.5,
             "count":  2 }
+        ],
+        "nextGroup": null
+      }
+    ],
+    "exitZone": { "x": 6, "y": 100, "z": 25, "width": 4, "depth": 2 }
+  },
+
+  {
+    "floorNumber": 3,
+    "name": "GoldFight",
+    "worldOrigin": { "x": 0, "y": 100, "z": 0 },
+    "playerSpawnPoint": { "x": 18.5, "y": 210, "z": 132.5 },
+    "fallY": 205,
+    "spawnGroups": [
+      {
+        "id": "floor_03_wave_1",
+        "trigger": { "type": "zone", "zPlane": 135},
+        "zones": [
+          { "x0": 20.5, "y0": 210, "z0": 137.5,
+            "x1": 16.5, "y1": 210, "z1": 150.5,
+            "count":  10 }
+        ],
+        "nextGroup": "floor_03_wave_2"
+      },
+      {
+        "id": "floor_03_wave_2",
+        "trigger": { "type": "on_cleared" },
+        "zones": [
+          { "x0": 29.5, "y0": 210, "z0": 151.5,
+            "x1": 7.5, "y1": 210, "z1": 157.5,
+            "count":  13 }
+        ],
+        "nextGroup": "floor_03_wave_3"
+      },
+      {
+        "id": "floor_03_wave_3",
+        "trigger": { "type": "on_cleared" },
+        "zones": [
+          { "x0": 36.5, "y0": 210, "z0": 157.5,
+            "x1": 30.5, "y1": 210, "z1": 142.5,
+            "count":  6 },
+          { "x0": 0.5, "y0": 210, "z0": 157.5,
+            "x1": 6.5, "y1": 210, "z1": 142.5,
+            "count":  6 }
         ],
         "nextGroup": null
       }

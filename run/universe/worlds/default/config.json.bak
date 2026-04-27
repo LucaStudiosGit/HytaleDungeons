@@ -4,6 +4,7 @@
     "$binary": "6Fodm6JATEm9hmH0FVPERw==",
     "$type": "04"
   },
+  "DisplayName": "HytaleDungeons - for playing",
   "Seed": 1772881247519,
   "SpawnProvider": {
     "Id": "Global",
@@ -33,7 +34,7 @@
   "IsPvpEnabled": false,
   "IsFallDamageEnabled": true,
   "IsGameTimePaused": false,
-  "GameTime": "0001-01-19T19:59:34.445732390Z",
+  "GameTime": "0001-01-23T12:31:06.242111860Z",
   "ClientEffects": {
     "SunHeightPercent": 100.0,
     "SunAngleDegrees": 0.0,
@@ -48,6 +49,16 @@
   "IsSpawnMarkersEnabled": true,
   "IsAllNPCFrozen": false,
   "GameplayConfig": "Default",
+  "Death": {
+    "RespawnController": {
+      "Type": "HomeOrSpawnPoint"
+    },
+    "ItemsLossMode": "Configured",
+    "ItemsAmountLossPercentage": 50.0,
+    "ItemsDurabilityLossPercentage": 10.0
+  },
+  "DaytimeDurationSeconds": 1728,
+  "NighttimeDurationSeconds": 1152,
   "IsCompassUpdating": true,
   "IsSavingPlayers": true,
   "IsSavingChunks": true,
