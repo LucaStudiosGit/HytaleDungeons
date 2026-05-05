@@ -68,7 +68,7 @@ public final class BetweenFloorsPage {
 
         for (int i = 0; i < offers.size(); i++) {
             final int idx = i;
-            builder.addEventListener(BTN_OFFER_PREFIX + idx, CustomUIEventBindingType.Activating,
+            builder = builder.addEventListener(BTN_OFFER_PREFIX + idx, CustomUIEventBindingType.Activating,
                     v -> handlePick(pageSlot[0], playerRef, playerId, idx));
         }
 

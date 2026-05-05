@@ -9,7 +9,6 @@ import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.command.system.CommandManager;
 import com.hypixel.hytale.server.core.console.ConsoleSender;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
-import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatMap;
 import com.hypixel.hytale.server.core.modules.entitystats.EntityStatValue;
 import com.hypixel.hytale.server.core.modules.entitystats.asset.DefaultEntityStatTypes;
@@ -56,14 +55,16 @@ public final class EnemyManager {
     });
 
     private final Map<Ref<EntityStore>, EnemyState> enemyStateMap = new ConcurrentHashMap<>();
-    private final Map<UUID, List<ScheduledFuture<?>>> pendingToSpawnByPlayer = new ConcurrentHashMap<>();
+    // Keyed by partyId (== playerId for solo runs)
+    private final Map<UUID, List<ScheduledFuture<?>>> pendingToSpawnByParty = new ConcurrentHashMap<>();
     private final Map<UUID, FloorRegistration> floorRegistrationMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Integer> generationByPlayer = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Integer> generationByParty = new ConcurrentHashMap<>();
 
     BiConsumer<UUID, SpawnGroup> chainSpawner = this::defaultChainSpawn;
 
     static final class FloorRegistration {
-        final PlayerRef playerRef;
+        /** Representative player ref used to obtain an entity store for NPC spawning. */
+        volatile PlayerRef playerRef;
         final World world;
         final Map<String, SpawnGroup> groupsById;
         final Map<String, Integer> liveByGroupId;
@@ -87,32 +88,40 @@ public final class EnemyManager {
         this.logger = logger;
     }
 
-    public void registerFloor(UUID playerId, PlayerRef playerRef, World world, List<SpawnGroup> groups) {
-        if (playerId == null) return;
-        floorRegistrationMap.put(playerId, new FloorRegistration(playerRef, world, groups));
+    /** Register the floor for a party (or solo player — partyId == playerId for solo). */
+    public void registerFloor(UUID partyId, PlayerRef playerRef, World world, List<SpawnGroup> groups) {
+        if (partyId == null) return;
+        floorRegistrationMap.put(partyId, new FloorRegistration(playerRef, world, groups));
     }
 
-    void registerFloorForTest(UUID playerId, List<SpawnGroup> groups) {
-        if (playerId == null) return;
-        floorRegistrationMap.put(playerId, new FloorRegistration(null, null, groups));
+    void registerFloorForTest(UUID partyId, List<SpawnGroup> groups) {
+        if (partyId == null) return;
+        floorRegistrationMap.put(partyId, new FloorRegistration(null, null, groups));
     }
 
     /**
-     * Must be called from the WorldThread.
+     * Spawn a group of mobs for a party floor.
+     * Must be called from the world thread.
+     *
+     * @param partyId the party (or solo player) whose floor this is
+     * @param world   the world to spawn into
+     * @param group   the spawn group definition
      */
-    public void spawnGroup(PlayerRef playerRef, World world, SpawnGroup group) {
-        if (playerRef == null || world == null || group == null) return;
-        if (!playerRef.isValid()) return;
+    public void spawnGroup(UUID partyId, World world, SpawnGroup group) {
+        if (partyId == null || world == null || group == null) return;
 
+        FloorRegistration reg = floorRegistrationMap.get(partyId);
+        if (reg == null || reg.playerRef == null || !reg.playerRef.isValid()) return;
+
+        PlayerRef playerRef = reg.playerRef;
         Ref<EntityStore> entityRef = playerRef.getReference();
         if (entityRef == null || !entityRef.isValid()) return;
         Store<EntityStore> store = entityRef.getStore();
 
-        final UUID playerId = playerRef.getUuid();
         final String groupId = group.id();
-        final int generation = generationByPlayer.getOrDefault(playerId, 0);
-        List<ScheduledFuture<?>> pending = pendingToSpawnByPlayer.computeIfAbsent(playerId, k -> new ArrayList<>());
-        int requested = group.totalMobCount();
+        final int generation = generationByParty.getOrDefault(partyId, 0);
+        List<ScheduledFuture<?>> pending = pendingToSpawnByParty.computeIfAbsent(partyId, k -> new ArrayList<>());
+
         int index = 0;
         for (SpawnZone zone : group.zones()) {
             for (int i = 0; i < zone.count(); i++) {
@@ -134,7 +143,7 @@ public final class EnemyManager {
 
                 ScheduledFuture<?> future = staggerScheduler.schedule(() -> world.execute(() -> {
                     if (!playerRef.isValid() || !entityRef.isValid()) return;
-                    int curGen = generationByPlayer.getOrDefault(playerId, 0);
+                    int curGen = generationByParty.getOrDefault(partyId, 0);
                     if (curGen != generation) return;
                     Vector3d spawnPos = resolveAirPosition(world, position, zone, 10);
                     try {
@@ -142,8 +151,8 @@ public final class EnemyManager {
                                 NPCPlugin.get().spawnNPC(store, arch.entityID, null, spawnPos, rotation);
                         if (spawned != null && spawned.left() != null) {
                             Ref<EntityStore> ref = spawned.left();
-                            enemyStateMap.put(ref, new EnemyState(arch, fAtk, playerId, groupId));
-                            incrementLive(playerId, groupId);
+                            enemyStateMap.put(ref, new EnemyState(arch, fAtk, partyId, groupId));
+                            incrementLive(partyId, groupId);
                             EntityStatMap statMap = store.getComponent(ref, EntityStatMap.getComponentType());
                             if (statMap != null) {
                                 int healthIdx = DefaultEntityStatTypes.getHealth();
@@ -159,7 +168,6 @@ public final class EnemyManager {
                                 }
                             }
                         }
-                        // TODO: play "pop"/"swish" SFX at position once Hytale audio API is identified
                     } catch (Throwable t) {
                         logger.accept("Failed to spawn " + arch.entityID + ": "
                                 + t.getClass().getSimpleName() + ": " + t.getMessage());
@@ -168,7 +176,6 @@ public final class EnemyManager {
                 pending.add(future);
             }
         }
-        // TODO: Track live mobs and chain nextGroup on clear (Enemy AI GDD)
     }
 
     public int removeTrackedMobs() {
@@ -188,21 +195,20 @@ public final class EnemyManager {
     }
 
     public void cleanAllEntities() {
-        for (UUID pid : generationByPlayer.keySet()) {
-            generationByPlayer.merge(pid, 1, Integer::sum);
+        for (UUID pid : generationByParty.keySet()) {
+            generationByParty.merge(pid, 1, Integer::sum);
         }
 
         int cancelled = 0;
-        for (List<ScheduledFuture<?>> list : pendingToSpawnByPlayer.values()) {
+        for (List<ScheduledFuture<?>> list : pendingToSpawnByParty.values()) {
             for (ScheduledFuture<?> f : list) {
                 if (f.cancel(false)) cancelled++;
             }
         }
-        pendingToSpawnByPlayer.clear();
+        pendingToSpawnByParty.clear();
         enemyStateMap.clear();
         floorRegistrationMap.clear();
 
-        final int cancelledFinal = cancelled;
         staggerScheduler.schedule(() -> {
             try {
                 CommandManager.get().handleCommand(ConsoleSender.INSTANCE, "entity clean --confirm");
@@ -213,45 +219,34 @@ public final class EnemyManager {
         }, 100L, TimeUnit.MILLISECONDS);
     }
 
-    public void despawnAll(UUID playerId, World world) {
-        if (playerId == null) return;
+    public void despawnAll(UUID partyId, World world) {
+        if (partyId == null) return;
 
-        generationByPlayer.merge(playerId, 1, Integer::sum);
+        generationByParty.merge(partyId, 1, Integer::sum);
 
-        List<ScheduledFuture<?>> pending = pendingToSpawnByPlayer.remove(playerId);
-        int cancelled = 0;
+        List<ScheduledFuture<?>> pending = pendingToSpawnByParty.remove(partyId);
         if (pending != null) {
-            for (ScheduledFuture<?> f : pending) {
-                if (f.cancel(false)) cancelled++;
-            }
+            for (ScheduledFuture<?> f : pending) f.cancel(false);
         }
 
         List<Ref<EntityStore>> toRemove = new ArrayList<>();
         Iterator<Map.Entry<Ref<EntityStore>, EnemyState>> it = enemyStateMap.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<Ref<EntityStore>, EnemyState> e = it.next();
-            if (playerId.equals(e.getValue().playerId())) {
+            if (partyId.equals(e.getValue().partyId())) {
                 toRemove.add(e.getKey());
                 it.remove();
             }
         }
-        floorRegistrationMap.remove(playerId);
+        floorRegistrationMap.remove(partyId);
 
-        if (toRemove.isEmpty() && cancelled == 0) return;
+        if (toRemove.isEmpty() || world == null) return;
 
-        if (world == null || toRemove.isEmpty()) {
-            return;
-        }
-
-        final int cancelledFinal = cancelled;
         world.execute(() -> {
-            int removed = 0;
             for (Ref<EntityStore> ref : toRemove) {
                 if (ref == null || !ref.isValid()) continue;
                 try {
-                    Store<EntityStore> s = ref.getStore();
-                    s.removeEntity(ref, RemoveReason.REMOVE);
-                    removed++;
+                    ref.getStore().removeEntity(ref, RemoveReason.REMOVE);
                 } catch (Throwable t) {
                     logger.accept("Failed to remove mob: "
                             + t.getClass().getSimpleName() + ": " + t.getMessage());
@@ -264,11 +259,11 @@ public final class EnemyManager {
         return (ref == null) ? null : enemyStateMap.get(ref);
     }
 
-    public void killFallenMobs(UUID playerId, int fallY) {
-        if (playerId == null) return;
+    public void killFallenMobs(UUID partyId, int fallY) {
+        if (partyId == null) return;
         List<Ref<EntityStore>> fallen = new ArrayList<>();
         for (Map.Entry<Ref<EntityStore>, EnemyState> entry : enemyStateMap.entrySet()) {
-            if (!playerId.equals(entry.getValue().playerId())) continue;
+            if (!partyId.equals(entry.getValue().partyId())) continue;
             Ref<EntityStore> ref = entry.getKey();
             if (ref == null || !ref.isValid()) continue;
             try {
@@ -285,8 +280,7 @@ public final class EnemyManager {
 
         for (Ref<EntityStore> ref : fallen) {
             try {
-                Store<EntityStore> s = ref.getStore();
-                s.removeEntity(ref, RemoveReason.REMOVE);
+                ref.getStore().removeEntity(ref, RemoveReason.REMOVE);
             } catch (Throwable t) {
                 // Already removed by native pipeline — safe to ignore.
             }
@@ -299,28 +293,28 @@ public final class EnemyManager {
         EnemyState state = enemyStateMap.remove(ref);
         if (state == null) return;
 
-        onMobDied(state.playerId(), state.groupId());
+        onMobDied(state.partyId(), state.groupId());
 
         if (runStateManager != null) {
-            runStateManager.onMobKilled(state.playerId());
+            runStateManager.onMobKilled(state.partyId());
         }
     }
 
-    void incrementLive(UUID playerId, String groupId) {
-        FloorRegistration reg = floorRegistrationMap.get(playerId);
+    void incrementLive(UUID partyId, String groupId) {
+        FloorRegistration reg = floorRegistrationMap.get(partyId);
         if (reg == null || groupId == null) return;
         reg.liveByGroupId.merge(groupId, 1, Integer::sum);
     }
 
-    public int getLiveCount(UUID playerId, String groupId) {
-        FloorRegistration reg = floorRegistrationMap.get(playerId);
+    public int getLiveCount(UUID partyId, String groupId) {
+        FloorRegistration reg = floorRegistrationMap.get(partyId);
         if (reg == null || groupId == null) return 0;
         Integer n = reg.liveByGroupId.get(groupId);
         return n == null ? 0 : n;
     }
 
-    void onMobDied(UUID playerId, String groupId) {
-        FloorRegistration reg = floorRegistrationMap.get(playerId);
+    void onMobDied(UUID partyId, String groupId) {
+        FloorRegistration reg = floorRegistrationMap.get(partyId);
         if (reg == null || groupId == null) return;
 
         Integer current = reg.liveByGroupId.get(groupId);
@@ -336,18 +330,14 @@ public final class EnemyManager {
         if (nextGroupId == null) return;
 
         SpawnGroup nextGroup = reg.groupsById.get(nextGroupId);
-        if (nextGroup == null) {
-            return;
-        }
-        chainSpawner.accept(playerId, nextGroup);
+        if (nextGroup == null) return;
+        chainSpawner.accept(partyId, nextGroup);
     }
 
-    private void defaultChainSpawn(UUID playerId, SpawnGroup nextGroup) {
-        FloorRegistration reg = floorRegistrationMap.get(playerId);
-        if (reg == null || reg.playerRef == null || reg.world == null) {
-            return;
-        }
-        spawnGroup(reg.playerRef, reg.world, nextGroup);
+    private void defaultChainSpawn(UUID partyId, SpawnGroup nextGroup) {
+        FloorRegistration reg = floorRegistrationMap.get(partyId);
+        if (reg == null || reg.world == null) return;
+        spawnGroup(partyId, reg.world, nextGroup);
     }
 
     private Vector3d resolveAirPosition(World world, Vector3d initial, SpawnZone zone, int maxAttempts) {
@@ -364,7 +354,6 @@ public final class EnemyManager {
             }
             last = pos;
         }
-        // Scan upward from last candidate until an air block is found
         int x = (int) last.x;
         int z = (int) last.z;
         for (int y = (int) last.y; y <= (int) last.y + 64; y++) {

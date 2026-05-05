@@ -87,12 +87,16 @@ public final class DamageInterceptor extends DamageEventSystem {
                                         Ref<EntityStore> attackerRef,
                                         Store<EntityStore> store,
                                         Damage damage) {
+        // Verify the attacker is a player and get their UUID
         Player player = store.getComponent(attackerRef, Player.getComponentType());
         if (player == null) return;
 
-        UUID playerId = victimState.playerId();
-        ItemDefinition weapon = playerDataManager.getEquippedWeapon(playerId);
-        int weaponLevel = playerDataManager.getEquippedWeaponLevel(playerId);
+        PlayerRef attackerPlayerRef = store.getComponent(attackerRef, PlayerRef.getComponentType());
+        if (attackerPlayerRef == null) return;
+        UUID attackerId = attackerPlayerRef.getUuid();
+
+        ItemDefinition weapon = playerDataManager.getEquippedWeapon(attackerId);
+        int weaponLevel = playerDataManager.getEquippedWeaponLevel(attackerId);
         int weaponDamage = combatManager.calculateMeleeDamage(weapon, weaponLevel);
 
         damage.setAmount((float) weaponDamage);
@@ -105,16 +109,17 @@ public final class DamageInterceptor extends DamageEventSystem {
         Player player = store.getComponent(victimRef, Player.getComponentType());
         if (player == null) return;
 
-        UUID playerId = attackerState.playerId();
-
+        // Use the actual victim's UUID for all lookups
         PlayerRef victimPlayerRef = store.getComponent(victimRef, PlayerRef.getComponentType());
-        if (victimPlayerRef != null && dodgeManager != null
-                && dodgeManager.isInIFrames(victimPlayerRef.getUuid())) {
+        if (victimPlayerRef == null) return;
+        UUID victimId = victimPlayerRef.getUuid();
+
+        if (dodgeManager != null && dodgeManager.isInIFrames(victimId)) {
             damage.setCancelled(true);
             return;
         }
 
-        RunData runData = runStateManager.getRunData(playerId);
+        RunData runData = runStateManager.getRunData(victimId);
         if (runData == null || runData.getState() != RunState.FLOOR_ACTIVE) {
             damage.setCancelled(true);
             return;
@@ -122,8 +127,8 @@ public final class DamageInterceptor extends DamageEventSystem {
 
         int enemyAtk = attackerState.baseAtk();
 
-        ItemDefinition armor = playerDataManager.getEquippedArmor(playerId);
-        int armorLevel = playerDataManager.getEquippedArmorLevel(playerId);
+        ItemDefinition armor = playerDataManager.getEquippedArmor(victimId);
+        int armorLevel = playerDataManager.getEquippedArmorLevel(victimId);
         int armorReduction = (armor != null) ? armor.getEffectiveStat(armorLevel) : 0;
 
         int finalDamage = Math.max(1, enemyAtk - armorReduction);

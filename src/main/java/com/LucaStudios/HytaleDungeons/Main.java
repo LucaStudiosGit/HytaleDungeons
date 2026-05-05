@@ -11,6 +11,7 @@ import com.LucaStudios.HytaleDungeons.FloorGen.FloorGenerator;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorTemplateLibrary;
 import com.LucaStudios.HytaleDungeons.Health.HealthManager;
 import com.LucaStudios.HytaleDungeons.Loot.ItemDatabase;
+import com.LucaStudios.HytaleDungeons.Party.PartyManager;
 import com.LucaStudios.HytaleDungeons.PlayerData.PlayerDataManager;
 import com.LucaStudios.HytaleDungeons.Restrictions.NoNaturalSpawnRestriction;
 import com.LucaStudios.HytaleDungeons.Restrictions.PlayerRestrictions;
@@ -24,6 +25,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 import java.util.logging.Level;
 
 public class Main extends JavaPlugin {
@@ -37,6 +39,7 @@ public class Main extends JavaPlugin {
     private PlayerDataManager playerDataManager;
     private FloorGenerator floorGenerator;
     private EnemyManager enemyManager;
+    private PartyManager partyManager;
 
     public Main(@Nonnull JavaPluginInit init) {
         super(init);
@@ -94,9 +97,17 @@ public class Main extends JavaPlugin {
         }
     }
 
+    public PartyManager getPartyManager() {
+        return partyManager;
+    }
+
     private void registerEvents() {
+        // Party system — manages join codes and party membership
+        partyManager = new PartyManager();
+
         // Run State Machine — handles player join, disconnect, and run lifecycle
         runStateManager = new RunStateManager(this);
+        runStateManager.setPartyManager(partyManager);
 
         // Player Data — tracks equipped gear, backpack, XP, and level
         playerDataManager = new PlayerDataManager(msg -> getLogger().at(Level.INFO).log(msg));
@@ -116,10 +127,11 @@ public class Main extends JavaPlugin {
             RunData data = runStateManager.getRunData(playerId);
             if (data == null || data.getState() != RunState.FLOOR_ACTIVE) return;
             boolean lethal = healthManager.applyEnvironmentalDamage(playerId, 0.10f);
+            UUID partyId = partyManager != null ? partyManager.getPartyId(playerId) : playerId;
             if (lethal) {
                 runStateManager.onPlayerDeath(playerId, playerRef);
             } else {
-                floorGenerator.teleportToActiveFloorSpawn(playerId, playerRef);
+                floorGenerator.teleportToActiveFloorSpawn(partyId, playerRef);
             }
         });
         runStateManager.setDeathPage(new com.LucaStudios.HytaleDungeons.UI.DeathPage());
@@ -127,6 +139,7 @@ public class Main extends JavaPlugin {
         // construct the menu up front here and register it below.
         MainMenuPage mainMenuPage = new MainMenuPage(this);
         mainMenuPage.setRunStateManager(runStateManager);
+        mainMenuPage.setPartyManager(partyManager);
         runStateManager.setGameOverPage(
                 new com.LucaStudios.HytaleDungeons.UI.GameOverPage(runStateManager, mainMenuPage, this));
         runStateManager.setBetweenFloorsPage(

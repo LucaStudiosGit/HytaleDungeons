@@ -4,13 +4,10 @@ import com.LucaStudios.HytaleDungeons.FloorGen.FloorData;
 import com.LucaStudios.HytaleDungeons.FloorGen.FloorGenerator;
 import com.LucaStudios.HytaleDungeons.Run.RunData;
 import com.LucaStudios.HytaleDungeons.Run.RunStateManager;
-import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.event.events.player.PlayerChatEvent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 
 import java.util.UUID;
 
@@ -58,7 +55,7 @@ public final class DebugCommands {
     }
 
     private void handleFloorInfo(PlayerRef sender, UUID playerId) {
-        FloorData floor = floorGenerator.getActiveFloor(playerId);
+        FloorData floor = floorGenerator.getActiveFloor(runStateManager.resolvePartyId(playerId));
         if (floor == null) {
             send(sender, "No active floor.");
             return;
@@ -96,15 +93,7 @@ public final class DebugCommands {
             send(sender, "No active run.");
             return;
         }
-
-        int floor = data.getCurrentFloor();
-        World world = worldFromPlayerRef(sender);
-        floorGenerator.generateFloor(playerId, floor, world, sender, () -> {
-            FloorData floorData = floorGenerator.getActiveFloor(playerId);
-            if (floorData != null) {
-                runStateManager.setMobCount(playerId, floorData.getMobSpawnCount());
-            }
-        });
+        runStateManager.debugRegenFloor(playerId, sender);
     }
 
     private void handleFinishFloor(PlayerRef sender, UUID playerId) {
@@ -125,13 +114,6 @@ public final class DebugCommands {
                 + "!finishfloor — clear current floor and open upgrade screen\n"
                 + "!gameover — force-open game-over page\n"
                 + "!help — this message");
-    }
-
-    private static World worldFromPlayerRef(PlayerRef playerRef) {
-        if (playerRef == null || !playerRef.isValid()) return null;
-        Ref<EntityStore> ref = playerRef.getReference();
-        if (ref == null || !ref.isValid()) return null;
-        return ref.getStore().getExternalData().getWorld();
     }
 
     private void send(PlayerRef player, String text) {

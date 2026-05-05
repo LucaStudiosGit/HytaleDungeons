@@ -15,7 +15,7 @@ class EnemyStateTest {
         EnemyState s = new EnemyState(Archetype.MELEE, 10, PLAYER, "group_a");
         assertEquals(Archetype.MELEE, s.archetype());
         assertEquals(10, s.baseAtk());
-        assertEquals(PLAYER, s.playerId());
+        assertEquals(PLAYER, s.partyId());
         assertEquals("group_a", s.groupId());
     }
 }

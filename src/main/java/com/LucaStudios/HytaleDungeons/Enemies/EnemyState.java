@@ -5,6 +5,6 @@ import java.util.UUID;
 public record EnemyState(
         Archetype archetype,
         int baseAtk,
-        UUID playerId,
+        UUID partyId,
         String groupId) {
 }
